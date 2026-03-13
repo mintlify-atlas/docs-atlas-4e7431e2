@@ -1,0 +1,160 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Ink",
+  "projectDescription": "React for interactive command-line apps with Flexbox layouts",
+  "theme": "palm",
+  "primaryColor": "#242b2c",
+  "lightColor": "#040404",
+  "darkColor": "#6a6a6d",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/app-lifecycle",
+              "concepts/layout-system",
+              "concepts/styling",
+              "concepts/user-input",
+              "concepts/testing"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/overview",
+              "components/text",
+              "components/box",
+              "components/static",
+              "components/transform",
+              "components/newline",
+              "components/spacer"
+            ]
+          },
+          {
+            "group": "Hooks",
+            "pages": [
+              "hooks/overview",
+              "hooks/use-input",
+              "hooks/use-paste",
+              "hooks/use-app",
+              "hooks/use-stdin",
+              "hooks/use-stdout",
+              "hooks/use-stderr",
+              "hooks/use-focus",
+              "hooks/use-focus-manager",
+              "hooks/use-cursor",
+              "hooks/use-window-size",
+              "hooks/use-box-metrics",
+              "hooks/use-is-screen-reader-enabled"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/react-devtools",
+              "advanced/screen-reader-support",
+              "advanced/continuous-integration",
+              "advanced/kitty-keyboard"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Rendering",
+            "pages": [
+              "api/render",
+              "api/render-to-string",
+              "api/measure-element"
+            ]
+          },
+          {
+            "group": "Component Props",
+            "pages": [
+              "api/box-props",
+              "api/text-props",
+              "api/static-props",
+              "api/transform-props"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/overview",
+              "examples/counter",
+              "examples/chat-app",
+              "examples/select-input",
+              "examples/borders-and-styling",
+              "examples/layout-patterns"
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "examples/useful-components",
+              "examples/useful-hooks"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "React-based component system for CLI apps",
+    "Flexbox layouts using Yoga layout engine",
+    "Built-in components (Box, Text, Static, Transform)",
+    "Comprehensive hooks for input, focus, and terminal control",
+    "Full TypeScript support",
+    "Color, border, and background styling",
+    "Screen reader accessibility support",
+    "React DevTools integration",
+    "Testing utilities with renderToString"
+  ],
+  "publicApiSurface": [
+    "render()",
+    "renderToString()",
+    "measureElement()",
+    "<Box>",
+    "<Text>",
+    "<Static>",
+    "<Transform>",
+    "<Newline>",
+    "<Spacer>",
+    "useInput()",
+    "usePaste()",
+    "useApp()",
+    "useStdin()",
+    "useStdout()",
+    "useStderr()",
+    "useFocus()",
+    "useFocusManager()",
+    "useCursor()",
+    "useWindowSize()",
+    "useBoxMetrics()",
+    "useIsScreenReaderEnabled()"
+  ]
+}
