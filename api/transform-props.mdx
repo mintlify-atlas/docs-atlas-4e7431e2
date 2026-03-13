@@ -1,0 +1,336 @@
+---
+title: Transform Props
+description: Complete reference for Transform component properties
+---
+
+Transform a string representation of React components before they're written to output. For example, you might want to apply a gradient to text, add a clickable link, or create some text effects. These use cases can't accept React nodes as input; they expect a string. That's what the `<Transform>` component does: it gives you an output string of its child components and lets you transform it in any way.
+
+<Note>
+  `<Transform>` must be applied only to `<Text>` children components and shouldn't change the dimensions of the output; otherwise, the layout will be incorrect.
+</Note>
+
+<Warning>
+  When children use `<Text>` styling props (e.g. `color`, `bold`), the string passed to `transform` will contain [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code). If your transform manipulates whitespace or does string operations like `.trim()`, you may need to use ANSI-aware methods (e.g. from [`slice-ansi`](https://github.com/chalk/slice-ansi) or [`strip-ansi`](https://github.com/chalk/strip-ansi)).
+</Warning>
+
+## Props
+
+<ParamField path="transform" type="(children: string, index: number) => string" required>
+  Function that transforms children output. It accepts children and must return transformed children as well.
+
+  ### Parameters
+
+  **children** (`string`) - Output of child components.
+
+  **index** (`number`) - The zero-indexed line number of the line that's currently being transformed.
+
+  ```jsx
+  <Transform transform={output => output.toUpperCase()}>
+    <Text>Hello World</Text>
+  </Transform>
+  // => 'HELLO WORLD'
+  ```
+</ParamField>
+
+<ParamField path="accessibilityLabel" type="string">
+  Screen-reader-specific text to output. If this is set, all children will be ignored.
+
+  ```jsx
+  <Transform 
+    transform={text => applyGradient(text)}
+    accessibilityLabel="Loading progress"
+  >
+    <Text>█████</Text>
+  </Transform>
+  ```
+</ParamField>
+
+<ParamField path="children" type="ReactNode">
+  The content to transform.
+
+  ```jsx
+  <Transform transform={text => text.toUpperCase()}>
+    <Text>transform me</Text>
+  </Transform>
+  ```
+</ParamField>
+
+## Type Definition
+
+```typescript
+type Props = {
+  readonly accessibilityLabel?: string;
+  readonly transform: (children: string, index: number) => string;
+  readonly children?: ReactNode;
+};
+```
+
+## Examples
+
+### Basic Transform
+
+```jsx
+import {Transform, Text} from 'ink';
+
+const Example = () => (
+  <Transform transform={output => output.toUpperCase()}>
+    <Text>Hello World</Text>
+  </Transform>
+);
+// Output: HELLO WORLD
+```
+
+### Prefix Lines
+
+```jsx
+import {Transform, Text} from 'ink';
+
+const PrefixedText = ({children}) => (
+  <Transform transform={(line, index) => `${index + 1}. ${line}`}>
+    {children}
+  </Transform>
+);
+
+// Usage:
+<PrefixedText>
+  <Text>
+    First line{"\n"}
+    Second line{"\n"}
+    Third line
+  </Text>
+</PrefixedText>
+// Output:
+// 1. First line
+// 2. Second line
+// 3. Third line
+```
+
+### Hanging Indent
+
+```jsx
+import {Transform, Text} from 'ink';
+
+const HangingIndent = ({indent = 4, children}) => (
+  <Transform
+    transform={(line, index) =>
+      index === 0 ? line : ' '.repeat(indent) + line
+    }
+  >
+    {children}
+  </Transform>
+);
+
+// Usage:
+const text = 'WHEN I WROTE the following pages, or rather the bulk of them, ' +
+  'I lived alone, in the woods, a mile from any neighbor.';
+
+<HangingIndent indent={4}>
+  <Text>{text}</Text>
+</HangingIndent>
+// Output:
+// WHEN I WROTE the following pages, or rather the bulk of them,
+//     I lived alone, in the woods, a mile from any neighbor.
+```
+
+### Custom Bullet Points
+
+```jsx
+import {Transform, Box, Text} from 'ink';
+
+const BulletList = ({items}) => (
+  <Box flexDirection="column">
+    {items.map((item, i) => (
+      <Transform key={i} transform={text => `• ${text}`}>
+        <Text>{item}</Text>
+      </Transform>
+    ))}
+  </Box>
+);
+
+// Usage:
+<BulletList 
+  items={[
+    'First item',
+    'Second item',
+    'Third item'
+  ]}
+/>
+// Output:
+// • First item
+// • Second item
+// • Third item
+```
+
+### Add Borders
+
+```jsx
+import {Transform, Text} from 'ink';
+
+const Bordered = ({children}) => (
+  <Transform
+    transform={(line, index, lines) => {
+      const width = line.length;
+      if (index === 0) {
+        return `┌${'\u2500'.repeat(width + 2)}┐\n│ ${line} │`;
+      }
+      return `│ ${line} │`;
+    }}
+  >
+    {children}
+  </Transform>
+);
+
+// Usage:
+<Bordered>
+  <Text>Hello</Text>
+</Bordered>
+// Output:
+// ┌───────┐
+// │ Hello │
+```
+
+### Gradient Effect
+
+```jsx
+import {Transform, Text} from 'ink';
+import gradient from 'gradient-string';
+
+const GradientText = ({children}) => (
+  <Transform transform={text => gradient.rainbow(text)}>
+    <Text>{children}</Text>
+  </Transform>
+);
+
+// Usage:
+<GradientText>Rainbow Gradient Text</GradientText>
+```
+
+### Link Annotation
+
+```jsx
+import {Transform, Text} from 'ink';
+import terminalLink from 'terminal-link';
+
+const Link = ({url, children}) => (
+  <Transform transform={text => terminalLink(text, url)}>
+    <Text>{children}</Text>
+  </Transform>
+);
+
+// Usage:
+<Link url="https://github.com">
+  <Text color="blue" underline>Visit GitHub</Text>
+</Link>
+```
+
+### Code Highlighting
+
+```jsx
+import {Transform, Text} from 'ink';
+import chalk from 'chalk';
+
+const HighlightCode = ({children}) => (
+  <Transform
+    transform={text => {
+      // Simple syntax highlighting
+      return text
+        .replace(/\b(const|let|var|function|return)\b/g, 
+          match => chalk.magenta(match))
+        .replace(/\b(\d+)\b/g, 
+          match => chalk.cyan(match))
+        .replace(/['"`]([^'"`]*)['"`]/g, 
+          (match, p1) => chalk.green(`"${p1}"`));
+    }}
+  >
+    {children}
+  </Transform>
+);
+
+// Usage:
+<HighlightCode>
+  <Text>const x = 42;</Text>
+</HighlightCode>
+```
+
+### Redact Sensitive Info
+
+```jsx
+import {Transform, Text} from 'ink';
+
+const RedactSecrets = ({children}) => (
+  <Transform
+    transform={text => {
+      // Redact email addresses
+      return text.replace(
+        /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+        match => {
+          const [user, domain] = match.split('@');
+          return `${user[0]}***@${domain}`;
+        }
+      );
+    }}
+  >
+    {children}
+  </Transform>
+);
+
+// Usage:
+<RedactSecrets>
+  <Text>Contact: user@example.com</Text>
+</RedactSecrets>
+// Output: Contact: u***@example.com
+```
+
+### Center Text
+
+```jsx
+import {Transform, Text} from 'ink';
+import {useStdout} from 'ink';
+
+const CenterText = ({children}) => {
+  const {stdout} = useStdout();
+  const width = stdout.columns || 80;
+
+  return (
+    <Transform
+      transform={text => {
+        const padding = Math.max(0, Math.floor((width - text.length) / 2));
+        return ' '.repeat(padding) + text;
+      }}
+    >
+      {children}
+    </Transform>
+  );
+};
+
+// Usage:
+<CenterText>
+  <Text bold>Centered Title</Text>
+</CenterText>
+```
+
+### Truncate Long Lines
+
+```jsx
+import {Transform, Text} from 'ink';
+import sliceAnsi from 'slice-ansi';
+
+const TruncateLines = ({maxLength = 50, children}) => (
+  <Transform
+    transform={text => {
+      if (text.length > maxLength) {
+        return sliceAnsi(text, 0, maxLength - 1) + '…';
+      }
+      return text;
+    }}
+  >
+    {children}
+  </Transform>
+);
+
+// Usage:
+<TruncateLines maxLength={30}>
+  <Text>This is a very long line that will be truncated</Text>
+</TruncateLines>
+// Output: This is a very long line th…
+```

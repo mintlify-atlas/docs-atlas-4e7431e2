@@ -1,0 +1,430 @@
+---
+title: Useful Hooks
+description: Custom React hooks for common CLI patterns
+---
+
+In addition to Ink's built-in hooks, the community has created useful custom hooks for common CLI patterns.
+
+## Official Ink Hooks
+
+Before exploring third-party hooks, make sure you're familiar with Ink's built-in hooks:
+
+### Core Hooks
+
+- **[`useInput`](/hooks/use-input)** - Handle keyboard input
+- **[`usePaste`](/hooks/use-paste)** - Handle pasted text
+- **[`useApp`](/hooks/use-app)** - Access app lifecycle methods
+- **[`useStdin`](/hooks/use-stdin)** - Access stdin stream
+- **[`useStdout`](/hooks/use-stdout)** - Access stdout stream
+- **[`useStderr`](/hooks/use-stderr)** - Access stderr stream
+
+### Layout & Rendering Hooks
+
+- **[`useBoxMetrics`](/hooks/use-box-metrics)** - Get box dimensions and position
+- **[`useWindowSize`](/hooks/use-window-size)** - Get terminal window size
+- **[`useCursor`](/hooks/use-cursor)** - Control cursor position
+
+### Focus Management Hooks
+
+- **[`useFocus`](/hooks/use-focus)** - Manage focus for interactive components
+- **[`useFocusManager`](/hooks/use-focus-manager)** - Control focus programmatically
+
+### Accessibility Hooks
+
+- **[`useIsScreenReaderEnabled`](/hooks/use-is-screen-reader-enabled)** - Detect screen reader usage
+
+## Community Hooks
+
+### [ink-use-stdout-dimensions](https://github.com/cameronhunter/ink-monorepo/tree/master/packages/ink-use-stdout-dimensions)
+
+Subscribe to stdout dimensions with automatic updates on terminal resize.
+
+```tsx
+import useStdoutDimensions from 'ink-use-stdout-dimensions';
+
+function MyComponent() {
+  const [width, height] = useStdoutDimensions();
+
+  return (
+    <Text>
+      Terminal size: {width}x{height}
+    </Text>
+  );
+}
+```
+
+**Note:** This is similar to the built-in `useWindowSize` hook, but from the community.
+
+## Creating Custom Hooks
+
+You can create your own hooks to encapsulate common patterns. Here are some useful examples:
+
+### useInterval
+
+A hook for running intervals that automatically cleans up:
+
+```tsx
+import {useEffect, useRef} from 'react';
+
+function useInterval(callback: () => void, delay: number | null) {
+  const savedCallback = useRef(callback);
+
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    if (delay === null) return;
+
+    const id = setInterval(() => savedCallback.current(), delay);
+    return () => clearInterval(id);
+  }, [delay]);
+}
+
+// Usage
+function Timer() {
+  const [count, setCount] = useState(0);
+
+  useInterval(() => {
+    setCount(c => c + 1);
+  }, 1000);
+
+  return <Text>Count: {count}</Text>;
+}
+```
+
+### useKeypress
+
+Simplify input handling for specific keys:
+
+```tsx
+import {useInput} from 'ink';
+
+function useKeypress(
+  key: string,
+  handler: () => void,
+  options: {ctrl?: boolean; shift?: boolean} = {}
+) {
+  useInput((input, pressedKey) => {
+    const ctrlMatch = !options.ctrl || pressedKey.ctrl;
+    const shiftMatch = !options.shift || pressedKey.shift;
+
+    if (input === key && ctrlMatch && shiftMatch) {
+      handler();
+    }
+  });
+}
+
+// Usage
+function MyComponent() {
+  const {exit} = useApp();
+
+  useKeypress('q', exit);
+  useKeypress('c', exit, {ctrl: true});
+
+  return <Text>Press 'q' or Ctrl+C to exit</Text>;
+}
+```
+
+### useArrowKeys
+
+Handle arrow key navigation:
+
+```tsx
+import {useInput} from 'ink';
+
+function useArrowKeys({
+  onUp,
+  onDown,
+  onLeft,
+  onRight,
+}: {
+  onUp?: () => void;
+  onDown?: () => void;
+  onLeft?: () => void;
+  onRight?: () => void;
+}) {
+  useInput((_, key) => {
+    if (key.upArrow && onUp) onUp();
+    if (key.downArrow && onDown) onDown();
+    if (key.leftArrow && onLeft) onLeft();
+    if (key.rightArrow && onRight) onRight();
+  });
+}
+
+// Usage
+function Menu() {
+  const [index, setIndex] = useState(0);
+  const items = ['Option 1', 'Option 2', 'Option 3'];
+
+  useArrowKeys({
+    onUp: () => setIndex(i => Math.max(0, i - 1)),
+    onDown: () => setIndex(i => Math.min(items.length - 1, i + 1)),
+  });
+
+  return (
+    <Box flexDirection="column">
+      {items.map((item, i) => (
+        <Text key={i} color={i === index ? 'blue' : undefined}>
+          {i === index ? '> ' : '  '}{item}
+        </Text>
+      ))}
+    </Box>
+  );
+}
+```
+
+### useAsync
+
+Handle async operations with loading states:
+
+```tsx
+import {useState, useEffect} from 'react';
+
+function useAsync<T>(
+  asyncFunction: () => Promise<T>,
+  immediate = true
+) {
+  const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [value, setValue] = useState<T | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+
+  const execute = async () => {
+    setStatus('pending');
+    setValue(null);
+    setError(null);
+
+    try {
+      const response = await asyncFunction();
+      setValue(response);
+      setStatus('success');
+    } catch (error) {
+      setError(error as Error);
+      setStatus('error');
+    }
+  };
+
+  useEffect(() => {
+    if (immediate) {
+      execute();
+    }
+  }, []);
+
+  return {execute, status, value, error};
+}
+
+// Usage
+function DataFetcher() {
+  const {status, value, error} = useAsync(async () => {
+    const res = await fetch('https://api.example.com/data');
+    return res.json();
+  });
+
+  if (status === 'pending') return <Text>Loading...</Text>;
+  if (status === 'error') return <Text color="red">Error: {error?.message}</Text>;
+  if (status === 'success') return <Text>Data: {JSON.stringify(value)}</Text>;
+
+  return null;
+}
+```
+
+### useDebounce
+
+Debounce values (useful for search inputs):
+
+```tsx
+import {useState, useEffect} from 'react';
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Usage
+function SearchInput() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    if (debouncedSearch) {
+      // Perform search
+      performSearch(debouncedSearch);
+    }
+  }, [debouncedSearch]);
+
+  return <TextInput value={searchTerm} onChange={setSearchTerm} />;
+}
+```
+
+### usePrevious
+
+Access previous state or prop values:
+
+```tsx
+import {useEffect, useRef} from 'react';
+
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>();
+
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+
+  return ref.current;
+}
+
+// Usage
+function Counter() {
+  const [count, setCount] = useState(0);
+  const prevCount = usePrevious(count);
+
+  return (
+    <Box flexDirection="column">
+      <Text>Current: {count}</Text>
+      <Text>Previous: {prevCount ?? 'none'}</Text>
+    </Box>
+  );
+}
+```
+
+### useLocalStorage
+
+Persist state to local storage:
+
+```tsx
+import {useState, useEffect} from 'react';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+
+function useLocalStorage<T>(
+  key: string,
+  defaultValue: T
+): [T, (value: T) => void] {
+  const configPath = path.join(os.homedir(), '.myapp', 'config.json');
+
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const data = fs.readFileSync(configPath, 'utf-8');
+      const config = JSON.parse(data);
+      return config[key] ?? defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      fs.mkdirSync(path.dirname(configPath), {recursive: true});
+      let config = {};
+      try {
+        config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      } catch {}
+      config[key] = value;
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    } catch (error) {
+      console.error('Failed to save to local storage:', error);
+    }
+  }, [value, key]);
+
+  return [value, setValue];
+}
+
+// Usage
+function Settings() {
+  const [theme, setTheme] = useLocalStorage('theme', 'dark');
+
+  return (
+    <Box>
+      <Text>Current theme: {theme}</Text>
+    </Box>
+  );
+}
+```
+
+### useExitOnKey
+
+Exit the app when a specific key is pressed:
+
+```tsx
+import {useApp, useInput} from 'ink';
+
+function useExitOnKey(key: string = 'q') {
+  const {exit} = useApp();
+
+  useInput((input) => {
+    if (input === key) {
+      exit();
+    }
+  });
+}
+
+// Usage
+function MyApp() {
+  useExitOnKey('q');
+
+  return <Text>Press 'q' to exit</Text>;
+}
+```
+
+## Hook Composition
+
+Combine multiple hooks for complex behavior:
+
+```tsx
+function useNavigableList<T>(items: T[]) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useArrowKeys({
+    onUp: () => setSelectedIndex(i => (i === 0 ? items.length - 1 : i - 1)),
+    onDown: () => setSelectedIndex(i => (i === items.length - 1 ? 0 : i + 1)),
+  });
+
+  return {
+    selectedIndex,
+    selectedItem: items[selectedIndex],
+    setSelectedIndex,
+  };
+}
+
+// Usage
+function Menu() {
+  const items = ['Option 1', 'Option 2', 'Option 3'];
+  const {selectedIndex, selectedItem} = useNavigableList(items);
+
+  return (
+    <Box flexDirection="column">
+      {items.map((item, i) => (
+        <Text key={i} color={i === selectedIndex ? 'blue' : undefined}>
+          {i === selectedIndex ? '> ' : '  '}{item}
+        </Text>
+      ))}
+    </Box>
+  );
+}
+```
+
+## Best Practices
+
+1. **Follow React hooks rules** - Only call hooks at the top level
+2. **Name hooks with `use` prefix** - This is the React convention
+3. **Keep hooks focused** - Each hook should do one thing well
+4. **Document your hooks** - Include JSDoc comments with examples
+5. **Handle cleanup** - Always clean up timers, listeners, etc.
+6. **Type your hooks** - Use TypeScript for better developer experience
+
+## Next Steps
+
+- Learn about [React hooks](https://react.dev/reference/react)
+- Explore [Ink's built-in hooks](/hooks/overview)
+- Check out [useful components](/examples/useful-components)
+- Read the [creating components guide](/components/overview)

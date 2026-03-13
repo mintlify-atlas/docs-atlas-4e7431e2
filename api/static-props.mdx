@@ -1,0 +1,365 @@
+---
+title: Static Props
+description: Complete reference for Static component properties
+---
+
+`<Static>` component permanently renders its output above everything else. It's useful for displaying activity like completed tasks or logs — things that don't change after they're rendered (hence the name "Static").
+
+It's preferred to use `<Static>` for use cases like these when you can't know or control the number of items that need to be rendered.
+
+<Note>
+  `<Static>` only renders new items in the `items` prop and ignores items that were previously rendered. This means that when you add new items to the `items` array, changes you make to previous items will not trigger a rerender.
+</Note>
+
+## Props
+
+<ParamField path="items" type="Array<T>" required>
+  Array of items of any type to render using the function you pass as a component child.
+
+  ```jsx
+  <Static items={['a', 'b', 'c']}>
+    {(item, index) => (
+      <Box key={index}>
+        <Text>{item}</Text>
+      </Box>
+    )}
+  </Static>
+  ```
+</ParamField>
+
+<ParamField path="style" type="Styles">
+  Styles to apply to a container of child elements. See [Box Props](/api/box-props) for supported properties.
+
+  ```jsx
+  <Static items={tasks} style={{padding: 1}}>
+    {task => (
+      <Box key={task.id}>
+        <Text>{task.name}</Text>
+      </Box>
+    )}
+  </Static>
+  ```
+</ParamField>
+
+<ParamField path="children" type="(item: T, index: number) => ReactNode" required>
+  Function that is called to render every item in the `items` array.
+
+  The first argument is the item itself, and the second argument is the index of that item in the `items` array.
+
+  <Warning>
+    A `key` must be assigned to the root component returned by this function.
+  </Warning>
+
+  ```jsx
+  <Static items={['a', 'b', 'c']}>
+    {(item, index) => {
+      // This function is called for every item in ['a', 'b', 'c']
+      // `item` is 'a', 'b', 'c'
+      // `index` is 0, 1, 2
+      return (
+        <Box key={index}>
+          <Text>Item: {item}</Text>
+        </Box>
+      );
+    }}
+  </Static>
+  ```
+</ParamField>
+
+## Type Definition
+
+```typescript
+type Props<T> = {
+  readonly items: T[];
+  readonly style?: Styles;
+  readonly children: (item: T, index: number) => ReactNode;
+};
+```
+
+## Examples
+
+### Completed Tasks
+
+```jsx
+import React, {useState, useEffect} from 'react';
+import {render, Static, Box, Text} from 'ink';
+
+const Example = () => {
+  const [tests, setTests] = useState([]);
+
+  useEffect(() => {
+    let completedTests = 0;
+    let timer;
+
+    const run = () => {
+      // Fake 10 completed tests
+      if (completedTests++ < 10) {
+        setTests(previousTests => [
+          ...previousTests,
+          {
+            id: previousTests.length,
+            title: `Test #${previousTests.length + 1}`
+          }
+        ]);
+
+        timer = setTimeout(run, 100);
+      }
+    };
+
+    run();
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
+
+  return (
+    <>
+      {/* This part will be rendered once to the terminal */}
+      <Static items={tests}>
+        {test => (
+          <Box key={test.id}>
+            <Text color="green">✓ {test.title}</Text>
+          </Box>
+        )}
+      </Static>
+
+      {/* This part keeps updating as state changes */}
+      <Box marginTop={1}>
+        <Text dimColor>Completed tests: {tests.length}</Text>
+      </Box>
+    </>
+  );
+};
+
+render(<Example />);
+```
+
+### Log Viewer
+
+```jsx
+import React, {useState, useEffect} from 'react';
+import {Static, Box, Text} from 'ink';
+
+const LogViewer = () => {
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    // Simulate receiving logs
+    const interval = setInterval(() => {
+      setLogs(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          message: `Log entry ${prev.length + 1}`
+        }
+      ]);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Box flexDirection="column">
+      <Text bold>Application Logs:</Text>
+      <Static items={logs}>
+        {log => (
+          <Box key={log.id}>
+            <Text dimColor>[{log.timestamp}]</Text>
+            <Text> {log.message}</Text>
+          </Box>
+        )}
+      </Static>
+      <Text dimColor>Total logs: {logs.length}</Text>
+    </Box>
+  );
+};
+```
+
+### Progress List
+
+```jsx
+import React, {useState, useEffect} from 'react';
+import {Static, Box, Text} from 'ink';
+
+const ProgressList = () => {
+  const [completed, setCompleted] = useState([]);
+  const [current, setCurrent] = useState('Initializing...');
+
+  useEffect(() => {
+    const tasks = [
+      'Installing dependencies',
+      'Building project',
+      'Running tests',
+      'Creating bundle'
+    ];
+
+    let index = 0;
+
+    const interval = setInterval(() => {
+      if (index < tasks.length) {
+        if (index > 0) {
+          setCompleted(prev => [...prev, tasks[index - 1]]);
+        }
+        setCurrent(tasks[index]);
+        index++;
+      } else {
+        setCompleted(prev => [...prev, tasks[tasks.length - 1]]);
+        setCurrent('Done!');
+        clearInterval(interval);
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Box flexDirection="column">
+      <Static items={completed}>
+        {task => (
+          <Box key={task}>
+            <Text color="green">✓</Text>
+            <Text> {task}</Text>
+          </Box>
+        )}
+      </Static>
+      <Box>
+        <Text color="yellow">⌛</Text>
+        <Text> {current}</Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### File Processing
+
+```jsx
+import React, {useState, useEffect} from 'react';
+import {Static, Box, Text} from 'ink';
+
+const FileProcessor = ({files}) => {
+  const [processed, setProcessed] = useState([]);
+  const [processing, setProcessing] = useState(null);
+
+  useEffect(() => {
+    let index = 0;
+
+    const processNext = () => {
+      if (index < files.length) {
+        setProcessing(files[index]);
+        
+        setTimeout(() => {
+          setProcessed(prev => [...prev, {
+            ...files[index],
+            processedAt: new Date().toISOString()
+          }]);
+          setProcessing(null);
+          index++;
+          processNext();
+        }, 1000);
+      }
+    };
+
+    processNext();
+  }, [files]);
+
+  return (
+    <Box flexDirection="column">
+      <Text bold underline>Processing Files:</Text>
+      
+      <Static items={processed} style={{marginTop: 1}}>
+        {file => (
+          <Box key={file.name}>
+            <Text color="green">✓</Text>
+            <Text> {file.name}</Text>
+            <Text dimColor> ({file.size} KB)</Text>
+          </Box>
+        )}
+      </Static>
+
+      {processing && (
+        <Box>
+          <Text color="blue">⌛</Text>
+          <Text> Processing: {processing.name}...</Text>
+        </Box>
+      )}
+
+      <Box marginTop={1}>
+        <Text dimColor>
+          Processed {processed.length} of {files.length} files
+        </Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Build Output
+
+```jsx
+import React, {useState, useEffect} from 'react';
+import {Static, Box, Text} from 'ink';
+
+const BuildOutput = () => {
+  const [outputs, setOutputs] = useState([]);
+  const [status, setStatus] = useState('Building...');
+
+  useEffect(() => {
+    const buildSteps = [
+      {type: 'info', message: 'Starting build process'},
+      {type: 'success', message: 'Compiled src/index.ts'},
+      {type: 'success', message: 'Compiled src/utils.ts'},
+      {type: 'success', message: 'Compiled src/components/App.tsx'},
+      {type: 'warning', message: 'Unused variable detected'},
+      {type: 'success', message: 'Build completed successfully'}
+    ];
+
+    let index = 0;
+
+    const interval = setInterval(() => {
+      if (index < buildSteps.length) {
+        setOutputs(prev => [...prev, {
+          ...buildSteps[index],
+          id: index
+        }]);
+        index++;
+      } else {
+        setStatus('Build complete!');
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getIcon = (type) => {
+    switch (type) {
+      case 'success': return {icon: '✓', color: 'green'};
+      case 'warning': return {icon: '⚠', color: 'yellow'};
+      case 'error': return {icon: '✗', color: 'red'};
+      default: return {icon: 'ⓘ', color: 'blue'};
+    }
+  };
+
+  return (
+    <Box flexDirection="column">
+      <Static items={outputs}>
+        {output => {
+          const {icon, color} = getIcon(output.type);
+          return (
+            <Box key={output.id}>
+              <Text color={color}>{icon}</Text>
+              <Text> {output.message}</Text>
+            </Box>
+          );
+        }}
+      </Static>
+      <Box marginTop={1}>
+        <Text bold>{status}</Text>
+      </Box>
+    </Box>
+  );
+};
+```

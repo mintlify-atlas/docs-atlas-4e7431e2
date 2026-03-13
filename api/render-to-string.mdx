@@ -1,0 +1,212 @@
+---
+title: renderToString()
+description: Render a React element to a string synchronously
+---
+
+Render a React element to a string synchronously. Unlike `render()`, this function does not write to stdout, does not set up any terminal event listeners, and returns the rendered output as a string.
+
+Useful for generating documentation, writing output to files, testing, or any scenario where you need the rendered output as a string without starting a persistent terminal application.
+
+## Signature
+
+```typescript
+function renderToString(
+  node: ReactNode,
+  options?: RenderToStringOptions
+): string
+```
+
+## Parameters
+
+<ParamField path="node" type="ReactNode" required>
+  The React component to render to a string.
+
+  ```jsx
+  const output = renderToString(<Text>Hello</Text>);
+  ```
+</ParamField>
+
+<ParamField path="options" type="RenderToStringOptions">
+  Configuration options.
+
+  <Expandable title="properties">
+    <ParamField path="columns" type="number" default="80">
+      Width of the virtual terminal in columns.
+
+      ```jsx
+      const output = renderToString(<Text>Hello World</Text>, {
+        columns: 40
+      });
+      ```
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Value
+
+<ResponseField name="output" type="string">
+  The rendered output as a string.
+</ResponseField>
+
+## Important Notes
+
+<Note>
+  **Terminal-specific hooks** (`useInput`, `useStdin`, `useStdout`, `useStderr`, `useApp`, `useFocus`, `useFocusManager`) return default no-op values since there is no terminal session. They will not throw, but they will not function as in a live terminal.
+</Note>
+
+<Note>
+  **useEffect callbacks** will execute during rendering (due to synchronous rendering mode), but state updates they trigger will not affect the returned output, which reflects the initial render.
+</Note>
+
+<Note>
+  **useLayoutEffect callbacks** fire synchronously during commit, so state updates they trigger **will** be reflected in the output.
+</Note>
+
+<Note>
+  **The `<Static>` component** is supported — its output is prepended to the dynamic output.
+</Note>
+
+<Warning>
+  If a component throws during rendering, the error is propagated to the caller after cleanup.
+</Warning>
+
+## Examples
+
+### Basic Usage
+
+```jsx
+import {renderToString, Text, Box} from 'ink';
+
+const output = renderToString(
+  <Box padding={1}>
+    <Text color="green">Hello World</Text>
+  </Box>,
+  {columns: 40}
+);
+
+console.log(output);
+// Output:
+// ┌──────────────┐
+// │ Hello World  │
+// └──────────────┘
+```
+
+### Writing to File
+
+```jsx
+import {renderToString, Box, Text} from 'ink';
+import fs from 'fs';
+
+const output = renderToString(
+  <Box flexDirection="column">
+    <Text bold>Documentation</Text>
+    <Text>Generated at: {new Date().toISOString()}</Text>
+  </Box>
+);
+
+fs.writeFileSync('./output.txt', output);
+```
+
+### Testing
+
+```jsx
+import {renderToString, Text} from 'ink';
+import {test, expect} from 'vitest';
+
+test('renders greeting', () => {
+  const output = renderToString(<Text color="green">Hello</Text>);
+  expect(output).toContain('Hello');
+});
+```
+
+### With Static Content
+
+```jsx
+import {renderToString, Static, Box, Text} from 'ink';
+
+const logs = [
+  {id: 1, message: 'Starting...'},
+  {id: 2, message: 'Processing...'},
+  {id: 3, message: 'Done!'}
+];
+
+const output = renderToString(
+  <>
+    <Static items={logs}>
+      {log => (
+        <Box key={log.id}>
+          <Text>✓ {log.message}</Text>
+        </Box>
+      )}
+    </Static>
+    <Text dimColor>All tasks completed</Text>
+  </>
+);
+
+console.log(output);
+// Output:
+// ✓ Starting...
+// ✓ Processing...
+// ✓ Done!
+// All tasks completed
+```
+
+### Custom Width
+
+```jsx
+import {renderToString, Box, Text} from 'ink';
+
+const text = 'This is a very long line of text that will wrap based on the column width';
+
+// Narrow output
+const narrow = renderToString(
+  <Box width={30}>
+    <Text>{text}</Text>
+  </Box>,
+  {columns: 30}
+);
+
+// Wide output
+const wide = renderToString(
+  <Box width={100}>
+    <Text>{text}</Text>
+  </Box>,
+  {columns: 100}
+);
+
+console.log('Narrow:', narrow);
+console.log('Wide:', wide);
+```
+
+### Generating Documentation
+
+```jsx
+import {renderToString, Box, Text} from 'ink';
+
+function generateHelp(commands) {
+  return renderToString(
+    <Box flexDirection="column" padding={1}>
+      <Text bold underline>Available Commands:</Text>
+      <Box flexDirection="column" marginTop={1}>
+        {commands.map(cmd => (
+          <Box key={cmd.name} marginTop={1}>
+            <Box width={15}>
+              <Text color="cyan">{cmd.name}</Text>
+            </Box>
+            <Text dimColor>{cmd.description}</Text>
+          </Box>
+        ))}
+      </Box>
+    </Box>,
+    {columns: 80}
+  );
+}
+
+const help = generateHelp([
+  {name: 'start', description: 'Start the application'},
+  {name: 'stop', description: 'Stop the application'},
+  {name: 'status', description: 'Check application status'}
+]);
+
+console.log(help);
+```

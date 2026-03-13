@@ -1,0 +1,225 @@
+---
+title: usePaste
+description: Handle pasted text in your CLI application with bracketed paste mode
+---
+
+`usePaste` is a React hook that handles pasted text separately from typed input. It automatically enables bracketed paste mode, ensuring pasted content arrives as a single string rather than being misinterpreted as individual key presses.
+
+## Import
+
+```jsx
+import {usePaste} from 'ink';
+```
+
+## Usage
+
+```jsx
+import {usePaste, Text} from 'ink';
+
+const Example = () => {
+  usePaste((text) => {
+    console.log('Pasted:', text);
+  });
+  
+  return <Text>Paste some text...</Text>;
+};
+```
+
+## Signature
+
+```typescript
+usePaste(handler: (text: string) => void, options?: Options): void
+```
+
+## Parameters
+
+<ParamField path="handler" type="function" required>
+  Callback function invoked whenever the user pastes text.
+  
+  **Parameters:**
+  - `text` (string) - The full pasted string, including newlines and special characters.
+</ParamField>
+
+<ParamField path="options.isActive" type="boolean" default="true">
+  Enable or disable the paste handler. Useful when multiple components use `usePaste` and only one should be active at a time.
+</ParamField>
+
+## Bracketed Paste Mode
+
+When `usePaste` is active, Ink automatically enables bracketed paste mode (`\x1b[?2004h`) on the terminal. This mode:
+
+- Wraps pasted text in special escape sequences
+- Allows the terminal to distinguish pasted content from typed input
+- Preserves the exact content including newlines and special characters
+- Prevents pasted text from being executed as commands
+
+Bracketed paste mode is automatically disabled when the component unmounts or when `isActive` is set to `false`.
+
+## Examples
+
+### Basic Paste Handling
+
+```jsx
+import {useState} from 'react';
+import {usePaste, Text, Box} from 'ink';
+
+const Example = () => {
+  const [content, setContent] = useState('');
+  
+  usePaste((text) => {
+    setContent(text);
+  });
+  
+  return (
+    <Box flexDirection="column">
+      <Text>Paste something:</Text>
+      <Text color="cyan">{content}</Text>
+    </Box>
+  );
+};
+```
+
+### Combining with useInput
+
+```jsx
+import {useState} from 'react';
+import {useInput, usePaste, Text, Box} from 'ink';
+
+const MyInput = () => {
+  const [value, setValue] = useState('');
+  
+  // Handle typed characters
+  useInput((input, key) => {
+    if (key.return) {
+      console.log('Submitted:', value);
+      setValue('');
+    } else if (key.backspace) {
+      setValue(prev => prev.slice(0, -1));
+    } else if (input) {
+      setValue(prev => prev + input);
+    }
+  });
+  
+  // Handle pasted text separately
+  usePaste((text) => {
+    setValue(prev => prev + text);
+  });
+  
+  return (
+    <Box>
+      <Text>Input: </Text>
+      <Text color="green">{value}</Text>
+    </Box>
+  );
+};
+```
+
+### Processing Pasted Code
+
+```jsx
+import {usePaste, Text, Box} from 'ink';
+
+const CodePaster = () => {
+  const [lines, setLines] = useState([]);
+  
+  usePaste((text) => {
+    const pastedLines = text.split('\n');
+    setLines(pastedLines);
+    console.log(`Pasted ${pastedLines.length} lines of code`);
+  });
+  
+  return (
+    <Box flexDirection="column">
+      <Text bold>Paste code here:</Text>
+      {lines.map((line, i) => (
+        <Text key={i} dimColor>
+          {i + 1}: {line}
+        </Text>
+      ))}
+    </Box>
+  );
+};
+```
+
+### Conditional Paste Handler
+
+```jsx
+import {useState} from 'react';
+import {usePaste, useInput, Text} from 'ink';
+
+const Example = () => {
+  const [pasteEnabled, setPasteEnabled] = useState(true);
+  
+  useInput((input) => {
+    if (input === 't') {
+      setPasteEnabled(prev => !prev);
+    }
+  });
+  
+  usePaste((text) => {
+    console.log('Pasted:', text);
+  }, {
+    isActive: pasteEnabled
+  });
+  
+  return (
+    <Text>
+      Paste handling: {pasteEnabled ? 'enabled' : 'disabled'}
+      {' '}(press 't' to toggle)
+    </Text>
+  );
+};
+```
+
+## Event Separation
+
+`usePaste` and `useInput` operate on separate event channels:
+
+- Pasted content is **never** forwarded to `useInput` handlers when `usePaste` is active
+- Typed characters are **never** forwarded to `usePaste` handlers
+- Both hooks can be used together in the same component without conflicts
+
+```jsx
+import {useInput, usePaste} from 'ink';
+
+const Example = () => {
+  useInput((input) => {
+    // This receives only typed characters and key events
+    console.log('Typed:', input);
+  });
+  
+  usePaste((text) => {
+    // This receives only pasted text
+    console.log('Pasted:', text);
+  });
+  
+  return <Text>Type or paste text</Text>;
+};
+```
+
+## Behavior Notes
+
+- Pasted text includes all characters exactly as pasted, including newlines, tabs, and escape sequences
+- The hook automatically enables bracketed paste mode when active
+- Raw mode is also enabled automatically (same as `useInput`)
+- Multiple `usePaste` hooks can coexist; use `isActive` to control which one processes paste events
+- Bracketed paste mode is automatically restored to its previous state when the component unmounts
+
+## Terminal Support
+
+Bracketed paste mode is supported by most modern terminals including:
+
+- iTerm2
+- Terminal.app (macOS)
+- Windows Terminal
+- GNOME Terminal
+- Konsole
+- tmux
+- screen
+
+In terminals that don't support bracketed paste mode, pasted text may still be processed character by character through `useInput`.
+
+## Related
+
+- [useInput](/hooks/use-input) - Handle keyboard input
+- [useStdin](/hooks/use-stdin) - Access the stdin stream directly

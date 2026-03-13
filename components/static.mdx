@@ -1,0 +1,309 @@
+---
+title: Static
+description: Render permanent output above dynamic content
+---
+
+The `<Static>` component permanently renders its output above everything else. It's useful for displaying activity like completed tasks or logs—things that don't change after they're rendered.
+
+## When to Use Static
+
+Use `<Static>` when you:
+
+- Display logs or completed tasks that shouldn't update
+- Can't control the number of items being rendered
+- Want permanent output while showing dynamic progress below
+- Build test runners, build tools, or deployment CLIs
+
+**Examples:**
+- [Tap](https://github.com/tapjs/node-tap) uses it for completed tests
+- [Gatsby](https://github.com/gatsbyjs/gatsby) displays generated pages with a live progress bar below
+
+## Basic Usage
+
+```tsx
+import {render, Static, Box, Text} from 'ink';
+
+const App = () => {
+  const items = ['Task 1', 'Task 2', 'Task 3'];
+  
+  return (
+    <>
+      <Static items={items}>
+        {(item, index) => (
+          <Box key={index}>
+            <Text color="green">✔ {item}</Text>
+          </Box>
+        )}
+      </Static>
+      
+      <Box marginTop={1}>
+        <Text>Currently processing...</Text>
+      </Box>
+    </>
+  );
+};
+
+render(<App />);
+```
+
+## Props
+
+<ParamField path="items" type="Array<T>" required>
+  Array of items to render. Only new items trigger renders—changes to existing items are ignored.
+  
+  ```tsx
+  const [tests, setTests] = useState([]);
+  
+  <Static items={tests}>
+    {test => <Text key={test.id}>✔ {test.name}</Text>}
+  </Static>
+  ```
+</ParamField>
+
+<ParamField path="children" type="(item: T, index: number) => ReactNode" required>
+  Function called for each item. Must return a component with a unique `key` prop.
+  
+  **Parameters:**
+  - `item` - Current item from the items array
+  - `index` - Index of the item in the array
+  
+  ```tsx
+  <Static items={['a', 'b', 'c']}>
+    {(item, index) => (
+      <Box key={index}>
+        <Text>Item {index}: {item}</Text>
+      </Box>
+    )}
+  </Static>
+  ```
+</ParamField>
+
+<ParamField path="style" type="Styles">
+  Styles to apply to the container. Accepts all [Box](/components/box) properties.
+  
+  ```tsx
+  <Static items={tasks} style={{padding: 1}}>
+    {task => <Text key={task.id}>{task.name}</Text>}
+  </Static>
+  ```
+</ParamField>
+
+## Complete Example
+
+From the Ink repository—a test runner simulation:
+
+```tsx
+import React, {useState, useEffect} from 'react';
+import {render, Static, Box, Text} from 'ink';
+
+type Test = {
+  id: number;
+  title: string;
+};
+
+const TestRunner = () => {
+  const [tests, setTests] = useState<Test[]>([]);
+
+  useEffect(() => {
+    let completedTests = 0;
+    let timer: NodeJS.Timeout;
+
+    const run = () => {
+      // Simulate 10 tests completing
+      if (completedTests++ < 10) {
+        setTests(previousTests => [
+          ...previousTests,
+          {
+            id: previousTests.length,
+            title: `Test #${previousTests.length + 1}`
+          }
+        ]);
+
+        timer = setTimeout(run, 100);
+      }
+    };
+
+    run();
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
+
+  return (
+    <>
+      {/* Static output - rendered once and never updates */}
+      <Static items={tests}>
+        {test => (
+          <Box key={test.id}>
+            <Text color="green">✔ {test.title}</Text>
+          </Box>
+        )}
+      </Static>
+
+      {/* Dynamic output - updates on every render */}
+      <Box marginTop={1}>
+        <Text dimColor>Completed tests: {tests.length}</Text>
+      </Box>
+    </>
+  );
+};
+
+render(<TestRunner />);
+```
+
+## How It Works
+
+### Incremental Rendering
+
+`<Static>` only renders **new** items added to the `items` array:
+
+```tsx
+const [logs, setLogs] = useState(['Log 1']);
+
+// Later...
+setLogs([...logs, 'Log 2']); // Only 'Log 2' is rendered
+```
+
+<Warning>
+  Changes to existing items in the array will **not** trigger a re-render. Only new items are displayed.
+</Warning>
+
+```tsx
+const [items, setItems] = useState([{id: 1, text: 'Hello'}]);
+
+// This will NOT update the display:
+items[0].text = 'Changed';
+setItems([...items]);
+
+// This WILL add a new line:
+setItems([...items, {id: 2, text: 'World'}]);
+```
+
+### Static vs Dynamic Content
+
+Content inside `<Static>` is rendered once and stays at the top:
+
+```tsx
+<>
+  <Static items={completedTasks}>
+    {task => <Text key={task.id}>✔ {task.name}</Text>}
+  </Static>
+  
+  {/* This re-renders on every update */}
+  <Text>Progress: {progress}%</Text>
+</>
+```
+
+Output:
+```
+✔ Task 1
+✔ Task 2
+✔ Task 3
+Progress: 75%  ← This line updates in place
+```
+
+## Use Cases
+
+### Build Tool Output
+
+```tsx
+const BuildTool = () => {
+  const [builtFiles, setBuiltFiles] = useState([]);
+  const [currentFile, setCurrentFile] = useState('');
+  
+  return (
+    <>
+      <Static items={builtFiles}>
+        {file => (
+          <Text key={file} color="green">✓ Built {file}</Text>
+        )}
+      </Static>
+      
+      <Text>Building {currentFile}...</Text>
+    </>
+  );
+};
+```
+
+### Log Viewer
+
+```tsx
+const LogViewer = () => {
+  const [logs, setLogs] = useState([]);
+  
+  return (
+    <Box flexDirection="column">
+      <Text bold>Application Logs:</Text>
+      
+      <Static items={logs} style={{marginTop: 1}}>
+        {(log, i) => (
+          <Text key={i} dimColor>
+            [{log.timestamp}] {log.message}
+          </Text>
+        )}
+      </Static>
+      
+      <Box marginTop={1} borderStyle="single" borderColor="gray">
+        <Text>Live tail: Waiting for new logs...</Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Deployment Progress
+
+```tsx
+const Deployment = () => {
+  const [steps, setSteps] = useState([]);
+  const [status, setStatus] = useState('Deploying...');
+  
+  return (
+    <>
+      <Text bold>Deployment Progress</Text>
+      
+      <Static items={steps}>
+        {step => (
+          <Box key={step.id} marginLeft={2}>
+            <Text color={step.success ? 'green' : 'red'}>
+              {step.success ? '✓' : '✗'} {step.name}
+            </Text>
+          </Box>
+        )}
+      </Static>
+      
+      <Box marginTop={1}>
+        <Text color="blue">{status}</Text>
+      </Box>
+    </>
+  );
+};
+```
+
+## Best Practices
+
+<Check>
+  **Do:** Use Static for append-only lists (logs, completed tasks, etc.)
+</Check>
+
+<Check>
+  **Do:** Always provide a unique `key` prop in the render function
+</Check>
+
+<Check>
+  **Do:** Use regular components for content that updates in place
+</Check>
+
+<Warning>
+  **Don't:** Modify existing items expecting them to re-render
+</Warning>
+
+<Warning>
+  **Don't:** Use Static for small, fixed lists (use regular components)
+</Warning>
+
+## Related Components
+
+- [Box](/components/box) - Layout container for organizing output
+- [Text](/components/text) - Display text in static content

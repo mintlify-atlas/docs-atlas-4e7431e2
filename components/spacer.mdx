@@ -1,0 +1,394 @@
+---
+title: Spacer
+description: Flexible spacing component that expands to fill available space
+---
+
+The `<Spacer>` component is a flexible space that expands along the major axis of its containing layout. It's a convenient shortcut for creating space between elements.
+
+## Basic Usage
+
+```tsx
+import {render, Box, Text, Spacer} from 'ink';
+
+const App = () => (
+  <Box>
+    <Text>Left</Text>
+    <Spacer />
+    <Text>Right</Text>
+  </Box>
+);
+
+render(<App />);
+```
+
+Output:
+```
+Left                                                                      Right
+```
+
+## How It Works
+
+`<Spacer>` is implemented as:
+
+```tsx
+<Box flexGrow={1} />
+```
+
+It expands to fill all available space in the flex container's main axis direction.
+
+## Props
+
+`<Spacer>` accepts no props. It's a simple component that just fills space.
+
+## Examples
+
+### Horizontal Spacing (Row Layout)
+
+In the default row layout, `<Spacer>` pushes items apart horizontally:
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const Header = () => (
+  <Box>
+    <Text bold>My App</Text>
+    <Spacer />
+    <Text dimColor>v1.0.0</Text>
+  </Box>
+);
+```
+
+Output:
+```
+My App                                                                  v1.0.0
+```
+
+### Vertical Spacing (Column Layout)
+
+In a column layout, `<Spacer>` pushes items apart vertically:
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const App = () => (
+  <Box flexDirection="column" height={10}>
+    <Text>Top</Text>
+    <Spacer />
+    <Text>Bottom</Text>
+  </Box>
+);
+```
+
+Output:
+```
+Top
+
+
+
+
+
+
+
+Bottom
+```
+
+### Multiple Spacers
+
+Multiple spacers divide space equally:
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const App = () => (
+  <Box>
+    <Text>Left</Text>
+    <Spacer />
+    <Text>Center</Text>
+    <Spacer />
+    <Text>Right</Text>
+  </Box>
+);
+```
+
+Output:
+```
+Left                          Center                          Right
+```
+
+### Navigation Bar
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const Navbar = () => (
+  <Box borderStyle="single" paddingX={1}>
+    <Text bold color="cyan">MyApp</Text>
+    <Spacer />
+    <Text>Home</Text>
+    <Text> • </Text>
+    <Text>Settings</Text>
+    <Text> • </Text>
+    <Text>About</Text>
+  </Box>
+);
+```
+
+### Status Line
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const StatusLine = ({status, time, user}) => (
+  <Box borderStyle="round" paddingX={2}>
+    <Text>
+      Status: <Text color={status === 'online' ? 'green' : 'red'}>{status}</Text>
+    </Text>
+    <Spacer />
+    <Text dimColor>{time}</Text>
+    <Spacer />
+    <Text>User: <Text bold>{user}</Text></Text>
+  </Box>
+);
+
+const App = () => (
+  <StatusLine status="online" time="14:30:00" user="john" />
+);
+```
+
+### Three-Column Layout
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const ThreeColumns = () => (
+  <Box flexDirection="column" padding={1}>
+    {/* Header */}
+    <Box borderBottom>
+      <Text bold>Left Column</Text>
+      <Spacer />
+      <Text bold>Center Column</Text>
+      <Spacer />
+      <Text bold>Right Column</Text>
+    </Box>
+    
+    {/* Content */}
+    <Box marginTop={1}>
+      <Box width="33%">
+        <Text>Left content</Text>
+      </Box>
+      <Box width="34%">
+        <Text>Center content</Text>
+      </Box>
+      <Box width="33%">
+        <Text>Right content</Text>
+      </Box>
+    </Box>
+  </Box>
+);
+```
+
+### Centered Content
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const Centered = ({children}) => (
+  <Box>
+    <Spacer />
+    {children}
+    <Spacer />
+  </Box>
+);
+
+const App = () => (
+  <Centered>
+    <Text bold color="blue">This text is centered</Text>
+  </Centered>
+);
+```
+
+### Dialog Box
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const Dialog = ({title, message}) => (
+  <Box 
+    flexDirection="column" 
+    borderStyle="round" 
+    padding={1}
+    width={50}
+  >
+    {/* Title bar */}
+    <Box>
+      <Text bold color="cyan">{title}</Text>
+      <Spacer />
+      <Text dimColor>✕</Text>
+    </Box>
+    
+    {/* Content */}
+    <Box marginTop={1} marginBottom={1}>
+      <Text>{message}</Text>
+    </Box>
+    
+    {/* Buttons */}
+    <Box>
+      <Spacer />
+      <Text backgroundColor="blue" color="white"> OK </Text>
+      <Text> </Text>
+      <Text backgroundColor="gray" color="white"> Cancel </Text>
+    </Box>
+  </Box>
+);
+
+const App = () => (
+  <Dialog 
+    title="Confirm" 
+    message="Are you sure you want to continue?" 
+  />
+);
+```
+
+## Spacer vs. Other Spacing Methods
+
+### Spacer
+
+Best for: Dynamic, flexible spacing that adapts to container size
+
+```tsx
+<Box>
+  <Text>Left</Text>
+  <Spacer />
+  <Text>Right</Text>
+</Box>
+```
+
+### Fixed Margin
+
+Best for: Consistent, predictable spacing
+
+```tsx
+<Box>
+  <Text>Left</Text>
+  <Text marginLeft={10}>Right</Text>
+</Box>
+```
+
+### justifyContent
+
+Best for: Specific alignment patterns
+
+```tsx
+<Box justifyContent="space-between">
+  <Text>Left</Text>
+  <Text>Right</Text>
+</Box>
+```
+
+### flexGrow
+
+Best for: Custom flexible spacing with specific ratios
+
+```tsx
+<Box>
+  <Text>Left</Text>
+  <Box flexGrow={2} /> {/* Takes 2x space */}
+  <Text>Middle</Text>
+  <Box flexGrow={1} /> {/* Takes 1x space */}
+  <Text>Right</Text>
+</Box>
+```
+
+## Common Patterns
+
+### Push to Edges
+
+```tsx
+// Push one item to the right
+<Box>
+  <Text>Content</Text>
+  <Spacer />
+  <Text>→</Text>
+</Box>
+
+// Push one item to the left
+<Box>
+  <Text>←</Text>
+  <Spacer />
+  <Text>Content</Text>
+</Box>
+```
+
+### Evenly Distributed Items
+
+```tsx
+<Box>
+  <Text>1</Text>
+  <Spacer />
+  <Text>2</Text>
+  <Spacer />
+  <Text>3</Text>
+  <Spacer />
+  <Text>4</Text>
+</Box>
+```
+
+### Toolbar
+
+```tsx
+const Toolbar = () => (
+  <Box borderStyle="single" paddingX={1}>
+    <Text>File</Text>
+    <Text> Edit</Text>
+    <Text> View</Text>
+    <Spacer />
+    <Text dimColor>Ctrl+S to save</Text>
+  </Box>
+);
+```
+
+## Best Practices
+
+<Check>
+  **Do:** Use Spacer for flexible, responsive spacing
+</Check>
+
+<Check>
+  **Do:** Combine with fixed-width elements for consistent layouts
+</Check>
+
+<Check>
+  **Do:** Use in both row and column layouts
+</Check>
+
+<Warning>
+  **Don't:** Use Spacer when you need precise, fixed spacing (use margin instead)
+</Warning>
+
+<Warning>
+  **Don't:** Forget that container needs available space for Spacer to expand
+</Warning>
+
+## Related Components
+
+- [Box](/components/box) - Container that Spacer works within
+- [Text](/components/text) - Components that Spacer separates
+- [Newline](/components/newline) - For vertical spacing within text
+
+## Implementation Note
+
+If you need more control over spacing, you can create custom spacer components:
+
+```tsx
+// Custom spacer with specific flex ratio
+const CustomSpacer = ({flex = 1}) => <Box flexGrow={flex} />;
+
+// Usage
+<Box>
+  <Text>Left</Text>
+  <CustomSpacer flex={2} />  {/* 2x the space */}
+  <Text>Middle</Text>
+  <CustomSpacer flex={1} />  {/* 1x the space */}
+  <Text>Right</Text>
+</Box>
+```

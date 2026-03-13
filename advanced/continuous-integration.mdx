@@ -1,0 +1,426 @@
+---
+title: Continuous Integration
+description: Configure and run Ink applications in CI environments like GitHub Actions, GitLab CI, and Jenkins
+---
+
+Ink automatically adapts its rendering behavior when running in Continuous Integration (CI) environments to ensure your CLI applications work correctly in non-interactive contexts.
+
+## Automatic CI Detection
+
+Ink detects CI environments using the `CI` environment variable, which is automatically set by most CI platforms:
+
+- **GitHub Actions**: Sets `CI=true`
+- **GitLab CI**: Sets `CI=true`
+- **Travis CI**: Sets `CI=true`
+- **CircleCI**: Sets `CI=true`
+- **Jenkins**: Sets `CI=true`
+- **And many others**
+
+Detection is powered by the [`is-in-ci`](https://github.com/sindresorhus/is-in-ci) package.
+
+## CI Mode Behavior
+
+When running in CI environments, Ink automatically adjusts its behavior:
+
+### 1. Non-Interactive Mode
+
+By default, CI environments are treated as non-interactive:
+
+```typescript
+// Default behavior in render()
+const isInteractive = options.interactive ?? 
+  (!isInCi() && stdout.isTTY);
+```
+
+**In non-interactive mode, Ink:**
+
+- **Skips ANSI erase sequences** - No terminal clearing or cursor manipulation
+- **Disables cursor control** - Cursor movement is not attempted
+- **No synchronized output** - Streaming output without terminal synchronization
+- **No resize handling** - Terminal resize events are not monitored
+- **Disables kitty keyboard auto-detection** - Enhanced keyboard protocols are not enabled
+- **Renders only the final frame** - Only the last frame is written on exit, not continuous updates
+
+This prevents:
+- Garbled output from unsupported ANSI codes
+- Race conditions from terminal state manipulation
+- Unnecessary overhead from features that don't work in CI
+
+### 2. Simplified Output
+
+Instead of continuously updating the terminal (which most CI environments don't support), Ink renders only the final frame on exit:
+
+```bash
+# Regular interactive mode
+⠋ Loading... (updates in place)
+⠙ Loading...
+⠹ Loading...
+✓ Complete!
+
+# CI mode
+✓ Complete! (only final output shown)
+```
+
+### 3. No Terminal Resize Handling
+
+CI environments typically don't emit resize events, and terminal dimensions are fixed. Ink skips resize event listeners to avoid unnecessary overhead.
+
+## Example: GitHub Actions
+
+### Basic Workflow
+
+```yaml .github/workflows/test.yml
+name: Test CLI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Run CLI
+        run: node cli.js
+```
+
+Ink will automatically detect the CI environment and adjust rendering.
+
+### Testing Interactive Features
+
+For testing interactive components, use [ink-testing-library](https://github.com/vadimdemedes/ink-testing-library):
+
+```yaml .github/workflows/test.yml
+- name: Run interactive tests
+  run: npm test
+```
+
+```jsx test/cli.test.js
+import React from 'react';
+import {render} from 'ink-testing-library';
+import {MyApp} from '../src/MyApp.js';
+
+test('renders correctly', () => {
+  const {lastFrame} = render(<MyApp />);
+  expect(lastFrame()).toMatchSnapshot();
+});
+```
+
+## Example: GitLab CI
+
+```yaml .gitlab-ci.yml
+test:
+  image: node:20
+  script:
+    - npm ci
+    - npm test
+    - node cli.js
+  artifacts:
+    reports:
+      junit: test-results.xml
+```
+
+## Example: CircleCI
+
+```yaml .circleci/config.yml
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npm test
+      - run: node cli.js
+
+workflows:
+  test-workflow:
+    jobs:
+      - test
+```
+
+## Forcing Interactive Mode
+
+If your CI environment supports full terminal rendering and you want interactive updates, you can force interactive mode:
+
+### Option 1: Environment Variable
+
+```bash
+CI=false node my-cli.js
+```
+
+```yaml .github/workflows/test.yml
+- name: Run CLI with interactive mode
+  run: CI=false node cli.js
+```
+
+### Option 2: Render Option
+
+```jsx
+import {render} from 'ink';
+
+render(<MyApp />, {
+  interactive: true  // Force interactive mode
+});
+```
+
+<Warning>
+  Most CI environments **do not** support interactive terminal features. Only enable interactive mode if you're certain your CI platform supports ANSI escape sequences and TTY interaction.
+</Warning>
+
+## Terminal Dimensions in CI
+
+CI environments may have different terminal dimensions than your local machine. You can control this:
+
+### Using Environment Variables
+
+```yaml .github/workflows/test.yml
+- name: Run CLI with specific dimensions
+  run: node cli.js
+  env:
+    COLUMNS: 120
+    LINES: 30
+```
+
+### Responsive Design
+
+Design your CLI to work with various terminal sizes:
+
+```jsx
+import {Box, Text, useWindowSize} from 'ink';
+
+const ResponsiveApp = () => {
+  const {columns} = useWindowSize();
+  
+  return (
+    <Box width={Math.min(columns, 100)} flexDirection="column">
+      <Text>This adapts to terminal width</Text>
+    </Box>
+  );
+};
+```
+
+## Handling Logs and Output
+
+### Static Content
+
+Use the `<Static>` component for content that should be preserved in CI output:
+
+```jsx
+import {Static, Box, Text} from 'ink';
+
+const BuildLog = ({logs}) => (
+  <>
+    <Static items={logs}>
+      {log => (
+        <Box key={log.id}>
+          <Text>{log.message}</Text>
+        </Box>
+      )}
+    </Static>
+    
+    <Box marginTop={1}>
+      <Text>Building...</Text>
+    </Box>
+  </>
+);
+```
+
+In CI mode, all static content will be visible in the final output.
+
+### Console Output
+
+By default, Ink patches console methods to prevent output conflicts. This works in CI too:
+
+```jsx
+import {render, Text} from 'ink';
+
+const App = () => {
+  console.log('This will not interfere with Ink output');
+  return <Text>App is running</Text>;
+};
+
+render(<App />);
+```
+
+To disable console patching:
+
+```jsx
+render(<App />, {
+  patchConsole: false
+});
+```
+
+## Testing Strategies
+
+### Unit Tests with ink-testing-library
+
+```jsx test/components.test.js
+import React from 'react';
+import {render} from 'ink-testing-library';
+import {Counter} from '../src/Counter.js';
+
+describe('Counter', () => {
+  test('renders initial count', () => {
+    const {lastFrame} = render(<Counter initialCount={5} />);
+    expect(lastFrame()).toContain('5');
+  });
+  
+  test('increments count', async () => {
+    const {lastFrame, stdin} = render(<Counter />);
+    
+    stdin.write(' '); // Simulate space key
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    expect(lastFrame()).toContain('1');
+  });
+});
+```
+
+### Snapshot Testing
+
+```jsx test/snapshots.test.js
+import React from 'react';
+import {render} from 'ink-testing-library';
+import {WelcomeScreen} from '../src/WelcomeScreen.js';
+
+test('welcome screen matches snapshot', () => {
+  const {lastFrame} = render(<WelcomeScreen name="User" />);
+  expect(lastFrame()).toMatchSnapshot();
+});
+```
+
+### Integration Tests
+
+```yaml .github/workflows/integration.yml
+name: Integration Tests
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - run: npm ci
+      
+      # Build and test the CLI
+      - run: npm run build
+      
+      # Run the CLI and check exit code
+      - name: Test CLI execution
+        run: |
+          output=$(node dist/cli.js --test)
+          echo "$output"
+          if [ $? -ne 0 ]; then exit 1; fi
+```
+
+## Common CI Issues and Solutions
+
+<AccordionGroup>
+  <Accordion title="Garbled output or escape sequences visible">
+    This happens when interactive mode is accidentally enabled in CI.
+    
+    **Solution:**
+    - Ensure `CI=true` is set (most CI platforms do this automatically)
+    - Or explicitly set `interactive: false` in render options
+    
+    ```jsx
+    render(<App />, {interactive: false});
+    ```
+  </Accordion>
+  
+  <Accordion title="No output visible in CI logs">
+    Ink may be buffering output that never gets flushed.
+    
+    **Solution:**
+    - Use `<Static>` for persistent log content
+    - Or use `console.log()` for critical CI output
+    - Ensure your app exits properly
+  </Accordion>
+  
+  <Accordion title="Tests hanging in CI">
+    Interactive components may be waiting for input that never comes.
+    
+    **Solution:**
+    - Use `ink-testing-library` for testing
+    - Mock stdin/stdout in tests
+    - Set timeouts for long-running operations
+  </Accordion>
+  
+  <Accordion title="Different output on CI vs local">
+    Terminal dimensions may differ.
+    
+    **Solution:**
+    - Set explicit dimensions via `COLUMNS` and `LINES` env vars
+    - Design responsive UIs that adapt to different widths
+    - Test locally with various terminal sizes
+  </Accordion>
+</AccordionGroup>
+
+## Debug Mode in CI
+
+For troubleshooting, enable debug mode to see each render frame:
+
+```jsx
+render(<App />, {
+  debug: true
+});
+```
+
+Or via environment:
+
+```yaml
+- name: Run with debug output
+  run: node cli.js
+  env:
+    DEBUG: true
+```
+
+## Performance Considerations
+
+### Reduce FPS in CI
+
+Since CI doesn't need smooth animations:
+
+```jsx
+render(<App />, {
+  maxFps: 1  // Reduce from default 30
+});
+```
+
+### Use Incremental Rendering
+
+For large outputs, enable incremental rendering:
+
+```jsx
+render(<App />, {
+  incrementalRendering: true
+});
+```
+
+## See Also
+
+- [Testing](/concepts/testing) - Comprehensive testing guide
+- [ink-testing-library](https://github.com/vadimdemedes/ink-testing-library) - Testing utilities for Ink
+- [is-in-ci](https://github.com/sindresorhus/is-in-ci) - CI detection library

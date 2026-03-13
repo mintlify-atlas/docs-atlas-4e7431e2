@@ -1,0 +1,201 @@
+---
+title: "Installation"
+description: "Get Ink set up in your project"
+---
+
+## Installation Methods
+
+Install Ink and React using your preferred package manager:
+
+<CodeGroup>
+
+```bash npm
+npm install ink react
+```
+
+```bash yarn
+yarn add ink react
+```
+
+```bash pnpm
+pnpm add ink react
+```
+
+</CodeGroup>
+
+<Note>
+  Ink requires React as a peer dependency. Both packages must be installed together.
+</Note>
+
+## Quick Setup with create-ink-app
+
+The fastest way to get started is with [create-ink-app](https://github.com/vadimdemedes/create-ink-app), which scaffolds a complete Ink CLI project:
+
+<CodeGroup>
+
+```bash JavaScript
+npx create-ink-app my-ink-cli
+```
+
+```bash TypeScript
+npx create-ink-app --typescript my-ink-cli
+```
+
+</CodeGroup>
+
+This creates a ready-to-use project with:
+- Pre-configured build setup
+- Example components
+- CLI entry point
+- Package.json with proper dependencies
+
+## Requirements
+
+<AccordionGroup>
+  <Accordion title="Node.js Version" icon="node">
+    Ink requires **Node.js 20 or higher**.
+    
+    Check your Node.js version:
+    ```bash
+    node --version
+    ```
+    
+    If you need to upgrade, download the latest version from [nodejs.org](https://nodejs.org).
+  </Accordion>
+
+  <Accordion title="React Version" icon="react">
+    Ink requires **React 19.0.0 or higher**.
+    
+    The `react` package is a peer dependency and must be installed alongside Ink:
+    ```bash
+    npm install ink react
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## TypeScript Setup
+
+Ink has first-class TypeScript support with built-in type definitions.
+
+### Install Types
+
+If you're using TypeScript, install the React type definitions:
+
+```bash
+npm install --save-dev @types/react
+```
+
+### TypeScript Configuration
+
+Add these settings to your `tsconfig.json`:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+<Note>
+  The `jsx` compiler option should be set to `"react"` for Ink to work properly.
+</Note>
+
+## Manual JavaScript Setup
+
+If you prefer not to use `create-ink-app`, you can set up Ink manually with Babel.
+
+<Steps>
+  <Step title="Install Babel preset">
+    Ink requires the same Babel setup as React apps:
+    
+    ```bash
+    npm install --save-dev @babel/preset-react
+    ```
+  </Step>
+  
+  <Step title="Configure Babel">
+    Create a `babel.config.json` file:
+    
+    ```json babel.config.json
+    {
+      "presets": ["@babel/preset-react"]
+    }
+    ```
+  </Step>
+  
+  <Step title="Create your component">
+    Create a `source.js` file:
+    
+    ```jsx source.js
+    import React from 'react';
+    import {render, Text} from 'ink';
+
+    const Demo = () => <Text>Hello World</Text>;
+
+    render(<Demo />);
+    ```
+  </Step>
+  
+  <Step title="Transpile and run">
+    Transpile your code with Babel:
+    
+    ```bash
+    npx babel source.js -o cli.js
+    node cli.js
+    ```
+  </Step>
+</Steps>
+
+### Development Workflow
+
+For a better development experience without manual transpilation, use one of these tools:
+
+- **[import-jsx](https://github.com/vadimdemedes/import-jsx)** - Import and transpile JSX files on the fly
+- **[@esbuild-kit/esm-loader](https://github.com/esbuild-kit/esm-loader)** - Fast ESM loader for development
+
+## Verify Installation
+
+Test your installation by creating a simple app:
+
+```jsx test.js
+import React from 'react';
+import {render, Text} from 'ink';
+
+const App = () => <Text color="green">Ink is working!</Text>;
+
+render(<App />);
+```
+
+Run it:
+
+```bash
+node test.js
+```
+
+You should see green text that says "Ink is working!" in your terminal.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Tutorial" icon="rocket" href="/quickstart">
+    Build your first interactive CLI app
+  </Card>
+  
+  <Card title="Core Components" icon="cube" href="/components/text">
+    Learn about Text, Box, and other built-in components
+  </Card>
+  
+  <Card title="Hooks" icon="webhook" href="/hooks/use-input">
+    Handle user input and manage app state
+  </Card>
+  
+  <Card title="Examples" icon="code" href="/examples/overview">
+    Explore real-world code examples
+  </Card>
+</CardGroup>

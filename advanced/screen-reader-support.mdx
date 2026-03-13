@@ -1,0 +1,395 @@
+---
+title: Screen Reader Support
+description: Make your CLI applications accessible with Ink's screen reader support and ARIA attributes
+---
+
+Ink has built-in support for screen readers, allowing you to create accessible command-line interfaces that work with assistive technologies.
+
+## Enabling Screen Reader Support
+
+There are two ways to enable screen reader support:
+
+### Option 1: Environment Variable
+
+Set the `INK_SCREEN_READER` environment variable to `true`:
+
+```bash
+INK_SCREEN_READER=true my-cli
+```
+
+### Option 2: Render Option
+
+Pass the `isScreenReaderEnabled` option when calling `render()`:
+
+```jsx
+import {render} from 'ink';
+
+render(<MyApp />, {
+  isScreenReaderEnabled: true
+});
+```
+
+The default value is controlled by the environment variable:
+
+```typescript
+// Default behavior
+const defaultValue = process.env['INK_SCREEN_READER'] === 'true';
+```
+
+## Detecting Screen Reader Status
+
+Use the `useIsScreenReaderEnabled` hook to detect if a screen reader is active:
+
+```jsx
+import {useIsScreenReaderEnabled, Text} from 'ink';
+
+const Example = () => {
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+
+  return (
+    <Text>
+      {isScreenReaderEnabled
+        ? 'Screen reader is enabled'
+        : 'Screen reader is disabled'}
+    </Text>
+  );
+};
+```
+
+This allows you to provide different output for screen reader users versus visual users.
+
+## ARIA Attributes
+
+Ink implements a subset of the [ARIA specification](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA) to provide semantic meaning to screen readers.
+
+### aria-label
+
+Provide a custom label for screen readers:
+
+```jsx
+import {Box, Text} from 'ink';
+
+const ProgressBar = ({progress}) => (
+  <Box>
+    <Box width="50%" height={1} backgroundColor="green" />
+    <Text aria-label={`Progress: ${progress}%`}>{progress}%</Text>
+  </Box>
+);
+```
+
+**Screen reader output:** "Progress: 50%"
+
+**Visual output:** "50%"
+
+This is useful when you want the screen reader to announce something more descriptive than what's displayed visually.
+
+### aria-hidden
+
+Hide decorative elements from screen readers:
+
+```jsx
+import {Box, Text} from 'ink';
+
+const ListItem = ({text}) => (
+  <Box>
+    <Text aria-hidden>• </Text>
+    <Text>{text}</Text>
+  </Box>
+);
+```
+
+The bullet point is purely decorative and doesn't add meaning, so we hide it from screen readers.
+
+**Type:** `boolean`  
+**Default:** `false`
+
+### aria-role
+
+Define the semantic role of an element:
+
+```jsx
+import {Box, Text} from 'ink';
+
+const Checkbox = ({checked, label}) => (
+  <Box aria-role="checkbox" aria-state={{checked}}>
+    <Text>{checked ? '☑' : '☐'} {label}</Text>
+  </Box>
+);
+```
+
+**Screen reader output:** "(checked) checkbox: Accept terms and conditions"
+
+#### Supported Roles
+
+<CardGroup cols={3}>
+  <Card title="button" icon="hand-pointer" />
+  <Card title="checkbox" icon="check-square" />
+  <Card title="radio" icon="circle-dot" />
+  <Card title="radiogroup" icon="list-radio" />
+  <Card title="list" icon="list" />
+  <Card title="listitem" icon="list-ol" />
+  <Card title="menu" icon="bars" />
+  <Card title="menuitem" icon="square" />
+  <Card title="progressbar" icon="spinner" />
+  <Card title="tab" icon="window-restore" />
+  <Card title="tablist" icon="folder-tree" />
+  <Card title="timer" icon="clock" />
+  <Card title="toolbar" icon="toolbox" />
+  <Card title="table" icon="table" />
+</CardGroup>
+
+### aria-state
+
+Define the state of interactive elements:
+
+```jsx
+import {Box, Text} from 'ink';
+
+const ToggleButton = ({enabled, label}) => (
+  <Box aria-role="button" aria-state={{disabled: !enabled}}>
+    <Text>{label}: {enabled ? 'ON' : 'OFF'}</Text>
+  </Box>
+);
+```
+
+#### Supported States
+
+- `checked` (boolean) - For checkboxes and radio buttons
+- `disabled` (boolean) - For disabled interactive elements
+- `expanded` (boolean) - For expandable/collapsible elements
+- `selected` (boolean) - For selectable items
+
+## Practical Examples
+
+### Accessible Checkbox
+
+```jsx
+import React, {useState} from 'react';
+import {Box, Text, useInput} from 'ink';
+
+const AccessibleCheckbox = ({label, initialChecked = false}) => {
+  const [checked, setChecked] = useState(initialChecked);
+
+  useInput((input, key) => {
+    if (input === ' ' || key.return) {
+      setChecked(!checked);
+    }
+  });
+
+  return (
+    <Box aria-role="checkbox" aria-state={{checked}}>
+      <Text>
+        {checked ? '☑' : '☐'} {label}
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Accessible Menu
+
+```jsx
+import React, {useState} from 'react';
+import {Box, Text, useInput} from 'ink';
+
+const Menu = ({items}) => {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useInput((input, key) => {
+    if (key.upArrow) {
+      setSelectedIndex(Math.max(0, selectedIndex - 1));
+    }
+    if (key.downArrow) {
+      setSelectedIndex(Math.min(items.length - 1, selectedIndex + 1));
+    }
+  });
+
+  return (
+    <Box aria-role="menu" flexDirection="column">
+      {items.map((item, index) => (
+        <Box
+          key={index}
+          aria-role="menuitem"
+          aria-state={{selected: index === selectedIndex}}
+        >
+          <Text color={index === selectedIndex ? 'blue' : 'white'}>
+            {index === selectedIndex ? '> ' : '  '}{item}
+          </Text>
+        </Box>
+      ))}
+    </Box>
+  );
+};
+```
+
+### Accessible Progress Bar
+
+```jsx
+import React from 'react';
+import {Box, Text, useIsScreenReaderEnabled} from 'ink';
+
+const ProgressBar = ({progress, label}) => {
+  const isScreenReader = useIsScreenReaderEnabled();
+  const barWidth = Math.round(progress / 2); // 50 chars max
+
+  if (isScreenReader) {
+    // Simplified output for screen readers
+    return (
+      <Box aria-role="progressbar" aria-label={`${label}: ${progress}%`}>
+        <Text>{label}: {progress}% complete</Text>
+      </Box>
+    );
+  }
+
+  // Visual progress bar
+  return (
+    <Box 
+      flexDirection="column" 
+      aria-role="progressbar"
+      aria-label={`${label}: ${progress}%`}
+    >
+      <Text>{label}</Text>
+      <Box width={50} borderStyle="single">
+        <Box width={barWidth} backgroundColor="green">
+          <Text> </Text>
+        </Box>
+      </Box>
+      <Text dimColor>{progress}%</Text>
+    </Box>
+  );
+};
+```
+
+### Accessible List
+
+```jsx
+import {Box, Text} from 'ink';
+
+const TodoList = ({todos}) => (
+  <Box aria-role="list" flexDirection="column">
+    {todos.map((todo, index) => (
+      <Box key={index} aria-role="listitem">
+        <Text aria-hidden>• </Text>
+        <Text>
+          {todo.completed ? '✓ ' : ''}
+          {todo.text}
+        </Text>
+      </Box>
+    ))}
+  </Box>
+);
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Provide meaningful labels">
+    Use `aria-label` to provide context that might not be obvious from the visual representation:
+    
+    ```jsx
+    // Good
+    <Text aria-label="Loading, please wait">⏳</Text>
+    
+    // Bad - screen reader will just say "hourglass"
+    <Text>⏳</Text>
+    ```
+  </Accordion>
+  
+  <Accordion title="Don't over-label">
+    If the text content is already descriptive, you don't need `aria-label`:
+    
+    ```jsx
+    // Good - text is already clear
+    <Text>Loading files...</Text>
+    
+    // Unnecessary - redundant label
+    <Text aria-label="Loading files">Loading files...</Text>
+    ```
+  </Accordion>
+  
+  <Accordion title="Hide purely decorative elements">
+    Use `aria-hidden` for visual flourishes that don't convey information:
+    
+    ```jsx
+    <Box>
+      <Text aria-hidden>═══════════</Text>
+      <Text>Important Content</Text>
+      <Text aria-hidden>═══════════</Text>
+    </Box>
+    ```
+  </Accordion>
+  
+  <Accordion title="Match roles to semantics">
+    Choose the ARIA role that best matches the element's function:
+    
+    ```jsx
+    // Good - checkbox for toggleable options
+    <Box aria-role="checkbox" aria-state={{checked}}>
+    
+    // Bad - button doesn't match the toggle behavior
+    <Box aria-role="button" aria-state={{checked}}>
+    ```
+  </Accordion>
+  
+  <Accordion title="Provide alternative output when needed">
+    Use `useIsScreenReaderEnabled` to render simpler, more descriptive output:
+    
+    ```jsx
+    const Chart = ({data}) => {
+      const isScreenReader = useIsScreenReaderEnabled();
+      
+      if (isScreenReader) {
+        return <DataTable data={data} />;
+      }
+      
+      return <VisualChart data={data} />;
+    };
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Testing Screen Reader Support
+
+To test your accessible CLI:
+
+1. **Enable screen reader mode:**
+   ```bash
+   INK_SCREEN_READER=true node your-cli.js
+   ```
+
+2. **Use actual screen reader software:**
+   - macOS: VoiceOver (Cmd+F5)
+   - Windows: NVDA or JAWS
+   - Linux: Orca
+
+3. **Check the output format:**
+   Verify that ARIA attributes produce the expected output format:
+   ```
+   (checked) checkbox: Accept terms
+   (disabled) button: Submit
+   progressbar: Loading: 75%
+   ```
+
+## How It Works Internally
+
+When screen reader support is enabled, Ink transforms component output:
+
+```jsx
+// Your code
+<Box aria-role="checkbox" aria-state={{checked: true}}>
+  <Text>Accept terms and conditions</Text>
+</Box>
+```
+
+```
+// Generated output for screen readers
+(checked) checkbox: Accept terms and conditions
+```
+
+Ink parses the ARIA attributes and generates a text representation that follows screen reader conventions.
+
+## See Also
+
+- [ARIA Specification](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA) - Full ARIA documentation
+- [Creating Components](/components/overview) - Learn about building accessible custom components
+- [Testing](/concepts/testing) - Test your accessible components

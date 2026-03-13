@@ -1,0 +1,467 @@
+---
+title: Layout System
+description: Building CLI layouts with Flexbox using Ink's Yoga layout engine
+---
+
+## Overview
+
+Ink uses [Yoga](https://github.com/facebook/yoga), Facebook's Flexbox layout engine, to build layouts in the terminal. If you're familiar with CSS Flexbox, you already know how to create layouts in Ink.
+
+<Note>
+Every element in Ink is a Flexbox container by default. Think of it as if every `<div>` in the browser had `display: flex`.
+</Note>
+
+## The Box Component
+
+The `<Box>` component is Ink's fundamental layout building block. It's like `<div style="display: flex">` in the browser:
+
+```tsx
+import {Box, Text} from 'ink';
+
+const Example = () => (
+	<Box margin={2}>
+		<Text>This is a box with margin</Text>
+	</Box>
+);
+```
+
+## Flex Direction
+
+Control the flow direction of child elements with `flexDirection`:
+
+### Row (Default)
+
+Elements flow horizontally from left to right:
+
+```tsx
+<Box>
+	<Box marginRight={1}>
+		<Text>X</Text>
+	</Box>
+	<Text>Y</Text>
+</Box>
+// Output: X Y
+```
+
+### Column
+
+Elements flow vertically from top to bottom:
+
+```tsx
+<Box flexDirection="column">
+	<Text>X</Text>
+	<Text>Y</Text>
+</Box>
+// Output:
+// X
+// Y
+```
+
+### Row Reverse
+
+Elements flow horizontally from right to left:
+
+```tsx
+<Box flexDirection="row-reverse">
+	<Text>X</Text>
+	<Box marginRight={1}>
+		<Text>Y</Text>
+	</Box>
+</Box>
+// Output: Y X
+```
+
+### Column Reverse
+
+Elements flow vertically from bottom to top:
+
+```tsx
+<Box flexDirection="column-reverse">
+	<Text>X</Text>
+	<Text>Y</Text>
+</Box>
+// Output:
+// Y
+// X
+```
+
+## Justify Content
+
+Control how items are distributed along the main axis (horizontally in `row`, vertically in `column`):
+
+```tsx
+import {Box, Text} from 'ink';
+
+const JustifyExample = () => (
+	<Box flexDirection="column">
+		<Box justifyContent="flex-start" width={20}>
+			<Text>X</Text>
+			<Text>Y</Text>
+		</Box>
+		{/* [X Y                ] */}
+
+		<Box justifyContent="center" width={20}>
+			<Text>X</Text>
+			<Text>Y</Text>
+		</Box>
+		{/* [        X Y        ] */}
+
+		<Box justifyContent="flex-end" width={20}>
+			<Text>X</Text>
+			<Text>Y</Text>
+		</Box>
+		{/* [                X Y] */}
+
+		<Box justifyContent="space-between" width={20}>
+			<Text>X</Text>
+			<Text>Y</Text>
+		</Box>
+		{/* [X                Y] */}
+
+		<Box justifyContent="space-around" width={20}>
+			<Text>X</Text>
+			<Text>Y</Text>
+		</Box>
+		{/* [   X        Y     ] */}
+
+		<Box justifyContent="space-evenly" width={20}>
+			<Text>X</Text>
+			<Text>Y</Text>
+		</Box>
+		{/* [     X      Y     ] */}
+	</Box>
+);
+```
+
+## Align Items
+
+Control how items are positioned along the cross axis (vertically in `row`, horizontally in `column`):
+
+### Flex Start
+
+Align items to the start of the cross axis:
+
+```tsx
+<Box alignItems="flex-start">
+	<Box marginRight={1}>
+		<Text>X</Text>
+	</Box>
+	<Text>
+		A{"\n"}
+		B{"\n"}
+		C
+	</Text>
+</Box>
+// Output:
+// X A
+//   B
+//   C
+```
+
+### Center
+
+Align items to the center of the cross axis:
+
+```tsx
+<Box alignItems="center">
+	<Box marginRight={1}>
+		<Text>X</Text>
+	</Box>
+	<Text>
+		A{"\n"}
+		B{"\n"}
+		C
+	</Text>
+</Box>
+// Output:
+//   A
+// X B
+//   C
+```
+
+### Flex End
+
+Align items to the end of the cross axis:
+
+```tsx
+<Box alignItems="flex-end">
+	<Box marginRight={1}>
+		<Text>X</Text>
+	</Box>
+	<Text>
+		A{"\n"}
+		B{"\n"}
+		C
+	</Text>
+</Box>
+// Output:
+//   A
+//   B
+// X C
+```
+
+## Dimensions
+
+Control the size of elements using width and height:
+
+### Fixed Dimensions
+
+```tsx
+<Box width={10} height={3}>
+	<Text>Hello</Text>
+</Box>
+```
+
+### Percentage Dimensions
+
+You can use percentage values relative to the parent:
+
+```tsx
+<Box width={10}>
+	<Box width="50%">
+		<Text>X</Text>
+	</Box>
+	<Text>Y</Text>
+</Box>
+// Output: X    Y
+// (X takes 50% = 5 characters)
+```
+
+### Min/Max Dimensions
+
+Constrain element sizes:
+
+```tsx
+<Box minWidth={10} maxWidth={50}>
+	<Text>This box has size constraints</Text>
+</Box>
+```
+
+## Flex Properties
+
+### Flex Grow
+
+Make an element expand to fill available space:
+
+```tsx
+<Box>
+	<Text>Label:</Text>
+	<Box flexGrow={1}>
+		<Text>Fills all remaining space</Text>
+	</Box>
+</Box>
+```
+
+### Flex Shrink
+
+Control how an element shrinks when space is limited:
+
+```tsx
+<Box width={20}>
+	<Box flexShrink={2} width={10}>
+		<Text>Will be 1/4</Text>
+	</Box>
+	<Box width={10}>
+		<Text>Will be 3/4</Text>
+	</Box>
+</Box>
+```
+
+### Flex Basis
+
+Set the initial size before flex grow/shrink:
+
+```tsx
+<Box width={6}>
+	<Box flexBasis={3}>
+		<Text>X</Text>
+	</Box>
+	<Text>Y</Text>
+</Box>
+// Output: X  Y
+```
+
+## Spacing
+
+### Padding
+
+Add internal spacing:
+
+```tsx
+<Box padding={2}>
+	<Text>Padded content</Text>
+</Box>
+
+<Box paddingX={2} paddingY={1}>
+	<Text>Horizontal and vertical padding</Text>
+</Box>
+
+<Box paddingTop={1} paddingBottom={2} paddingLeft={3} paddingRight={1}>
+	<Text>Individual sides</Text>
+</Box>
+```
+
+### Margin
+
+Add external spacing:
+
+```tsx
+<Box margin={2}>
+	<Text>Margin around element</Text>
+</Box>
+
+<Box marginX={2} marginY={1}>
+	<Text>Horizontal and vertical margin</Text>
+</Box>
+
+<Box marginTop={1} marginBottom={2} marginLeft={3} marginRight={1}>
+	<Text>Individual sides</Text>
+</Box>
+```
+
+### Gap
+
+Add spacing between children:
+
+```tsx
+<Box gap={1} width={3} flexWrap="wrap">
+	<Text>A</Text>
+	<Text>B</Text>
+	<Text>C</Text>
+</Box>
+// Output:
+// A B
+//
+// C
+
+{/* Column gap only */}
+<Box columnGap={1}>
+	<Text>A</Text>
+	<Text>B</Text>
+</Box>
+// Output: A B
+
+{/* Row gap only */}
+<Box flexDirection="column" rowGap={1}>
+	<Text>A</Text>
+	<Text>B</Text>
+</Box>
+// Output:
+// A
+//
+// B
+```
+
+## Wrapping
+
+Control how items wrap when they exceed container size:
+
+```tsx
+<Box width={2} flexWrap="wrap">
+	<Text>A</Text>
+	<Text>BC</Text>
+</Box>
+// Output:
+// A
+// B C
+
+<Box flexDirection="column" height={2} flexWrap="wrap">
+	<Text>A</Text>
+	<Text>B</Text>
+	<Text>C</Text>
+</Box>
+// Output: A C
+//         B
+```
+
+## Positioning
+
+Control element positioning:
+
+### Relative (Default)
+
+```tsx
+<Box position="relative" top={2} left={5}>
+	<Text>Offset from normal position</Text>
+</Box>
+```
+
+### Absolute
+
+```tsx
+<Box position="absolute" top={0} right={0}>
+	<Text>Positioned relative to parent</Text>
+</Box>
+```
+
+## Complete Layout Example
+
+Here's a complete example combining multiple layout concepts:
+
+```tsx
+import {Box, Text} from 'ink';
+
+const Dashboard = () => (
+	<Box flexDirection="column" padding={2}>
+		{/* Header */}
+		<Box justifyContent="space-between" marginBottom={1}>
+			<Text bold>My CLI Dashboard</Text>
+			<Text dimColor>v1.0.0</Text>
+		</Box>
+
+		{/* Content area with sidebar */}
+		<Box>
+			{/* Sidebar */}
+			<Box
+				flexDirection="column"
+				width={20}
+				borderStyle="single"
+				marginRight={2}
+			>
+				<Text>Menu Item 1</Text>
+				<Text>Menu Item 2</Text>
+				<Text>Menu Item 3</Text>
+			</Box>
+
+			{/* Main content */}
+			<Box flexDirection="column" flexGrow={1}>
+				<Box borderStyle="single" padding={1} marginBottom={1}>
+					<Text>Main content area</Text>
+				</Box>
+
+				<Box justifyContent="space-between">
+					<Box width="45%" borderStyle="round" padding={1}>
+						<Text>Panel 1</Text>
+					</Box>
+					<Box width="45%" borderStyle="round" padding={1}>
+						<Text>Panel 2</Text>
+					</Box>
+				</Box>
+			</Box>
+		</Box>
+
+		{/* Footer */}
+		<Box marginTop={1} justifyContent="center">
+			<Text dimColor>Press q to quit</Text>
+		</Box>
+	</Box>
+);
+```
+
+## Best Practices
+
+<Card title="Use Flexbox for Everything" icon="grid">
+Every Box is a flex container. Leverage flexDirection, justifyContent, and alignItems for all layouts.
+</Card>
+
+<Card title="Use Percentage Widths for Responsive Layouts" icon="arrows-left-right">
+Percentage-based widths adapt to different terminal sizes.
+</Card>
+
+<Card title="Combine Gap and Margin" icon="border-all">
+Use `gap` for spacing between siblings and `margin` for external spacing.
+</Card>
+
+<Card title="Test Different Terminal Sizes" icon="window-maximize">
+Terminal sizes vary widely. Test your layouts at different dimensions.
+</Card>

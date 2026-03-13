@@ -1,0 +1,177 @@
+---
+title: Counter Example
+description: A simple counter that demonstrates state and effects in Ink
+---
+
+The Counter example is the "Hello World" of Ink. It demonstrates how to use React state and effects to build a simple, dynamic CLI application.
+
+## What This Example Demonstrates
+
+- Using `useState` to manage component state
+- Using `useEffect` to run side effects (timers)
+- Cleaning up effects when components unmount
+- Styling text with the `<Text>` component
+
+## The Code
+
+```tsx
+import React from 'react';
+import {render, Text} from 'ink';
+
+function Counter() {
+  const [counter, setCounter] = React.useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCounter(prevCounter => prevCounter + 1);
+    }, 100);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  return <Text color="green">{counter} tests passed</Text>;
+}
+
+render(<Counter />);
+```
+
+## Running the Example
+
+```bash
+npm run example examples/counter
+```
+
+You'll see a green counter that increments every 100ms, displaying "X tests passed".
+
+## How It Works
+
+### State Management
+
+```tsx
+const [counter, setCounter] = React.useState(0);
+```
+
+We use React's `useState` hook to create a counter state variable initialized to `0`. The `setCounter` function updates this value.
+
+### The Timer Effect
+
+```tsx
+React.useEffect(() => {
+  const timer = setInterval(() => {
+    setCounter(prevCounter => prevCounter + 1);
+  }, 100);
+
+  return () => {
+    clearInterval(timer);
+  };
+}, []);
+```
+
+The `useEffect` hook runs when the component mounts (empty dependency array `[]`). It:
+
+1. Creates a timer that fires every 100ms
+2. Updates the counter using the previous value
+3. Returns a cleanup function that clears the timer
+
+**Important:** We use the function form of `setCounter` (`prevCounter => prevCounter + 1`) to ensure we always increment based on the current value, avoiding stale closures.
+
+### Rendering
+
+```tsx
+return <Text color="green">{counter} tests passed</Text>;
+```
+
+The component returns a green `<Text>` element that displays the current counter value.
+
+## Key Concepts
+
+### App Lifecycle
+
+An Ink app stays alive as long as there's active work in the event loop. In this example, the `setInterval` timer keeps the app running. The app will continue until:
+
+- You press **Ctrl+C** (default behavior)
+- The timer is cleared and no other work remains
+- You call `exit()` from the `useApp` hook
+
+### Effect Cleanup
+
+The cleanup function is critical:
+
+```tsx
+return () => {
+  clearInterval(timer);
+};
+```
+
+Without this, the timer would continue running even after the component unmounts, causing memory leaks.
+
+## Variations
+
+Try modifying the example:
+
+### Slower Counter
+
+```tsx
+setInterval(() => {
+  setCounter(prevCounter => prevCounter + 1);
+}, 1000); // Update every second
+```
+
+### Countdown Timer
+
+```tsx
+function Countdown() {
+  const [counter, setCounter] = React.useState(10);
+
+  React.useEffect(() => {
+    if (counter === 0) return;
+
+    const timer = setInterval(() => {
+      setCounter(prevCounter => prevCounter - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [counter]);
+
+  return (
+    <Text color={counter <= 3 ? 'red' : 'green'}>
+      {counter > 0 ? `${counter} seconds remaining` : 'Time\'s up!'}
+    </Text>
+  );
+}
+```
+
+### Multiple Counters
+
+```tsx
+function MultiCounter() {
+  const [fast, setFast] = React.useState(0);
+  const [slow, setSlow] = React.useState(0);
+
+  React.useEffect(() => {
+    const fastTimer = setInterval(() => setFast(n => n + 1), 100);
+    const slowTimer = setInterval(() => setSlow(n => n + 1), 1000);
+
+    return () => {
+      clearInterval(fastTimer);
+      clearInterval(slowTimer);
+    };
+  }, []);
+
+  return (
+    <Box flexDirection="column">
+      <Text color="green">Fast: {fast}</Text>
+      <Text color="blue">Slow: {slow}</Text>
+    </Box>
+  );
+}
+```
+
+## Next Steps
+
+- Learn about [user input handling](/examples/chat-app) in the Chat App example
+- Explore [layout and styling](/examples/borders-and-styling) options
+- Read the [`<Text>` component documentation](/components/text)
+- Learn more about [React hooks](https://react.dev/reference/react)

@@ -1,0 +1,408 @@
+---
+title: Borders and Styling
+description: Learn how to style your CLI components with borders, colors, and backgrounds
+---
+
+Ink provides powerful styling options for your CLI components. This guide covers borders, colors, and backgrounds through practical examples.
+
+## Border Styles
+
+Ink supports multiple border styles from the [cli-boxes](https://github.com/sindresorhus/cli-boxes) module:
+
+```tsx
+import React from 'react';
+import {render, Box, Text} from 'ink';
+
+function Borders() {
+  return (
+    <Box flexDirection="column" padding={2}>
+      <Box>
+        <Box borderStyle="single" marginRight={2}>
+          <Text>single</Text>
+        </Box>
+
+        <Box borderStyle="double" marginRight={2}>
+          <Text>double</Text>
+        </Box>
+
+        <Box borderStyle="round" marginRight={2}>
+          <Text>round</Text>
+        </Box>
+
+        <Box borderStyle="bold">
+          <Text>bold</Text>
+        </Box>
+      </Box>
+
+      <Box marginTop={1}>
+        <Box borderStyle="singleDouble" marginRight={2}>
+          <Text>singleDouble</Text>
+        </Box>
+
+        <Box borderStyle="doubleSingle" marginRight={2}>
+          <Text>doubleSingle</Text>
+        </Box>
+
+        <Box borderStyle="classic">
+          <Text>classic</Text>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+render(<Borders />);
+```
+
+## Running the Example
+
+```bash
+npm run example examples/borders
+```
+
+## Available Border Styles
+
+- **`single`** - Single line border (├─┤)
+- **`double`** - Double line border (╠═╣)
+- **`round`** - Rounded corners (╭─╮)
+- **`bold`** - Bold/thick lines (┣━┫)
+- **`singleDouble`** - Single horizontal, double vertical
+- **`doubleSingle`** - Double horizontal, single vertical
+- **`classic`** - ASCII characters (+--+)
+
+## Border Colors
+
+Customize border colors using the `borderColor` prop:
+
+```tsx
+<Box borderStyle="round" borderColor="green">
+  <Text>Green border</Text>
+</Box>
+
+<Box borderStyle="round" borderColor="#FF8800">
+  <Text>Orange border (hex)</Text>
+</Box>
+
+<Box borderStyle="round" borderColor="rgb(255, 0, 0)">
+  <Text>Red border (rgb)</Text>
+</Box>
+```
+
+### Individual Border Colors
+
+Color each border side separately:
+
+```tsx
+<Box
+  borderStyle="single"
+  borderTopColor="red"
+  borderRightColor="green"
+  borderBottomColor="blue"
+  borderLeftColor="yellow"
+>
+  <Text>Rainbow borders</Text>
+</Box>
+```
+
+### Dim Borders
+
+Make borders less prominent:
+
+```tsx
+<Box borderStyle="round" borderDimColor>
+  <Text>Dimmed border</Text>
+</Box>
+
+{/* Or dim individual sides */}
+<Box
+  borderStyle="single"
+  borderTopDimColor
+  borderBottomDimColor
+>
+  <Text>Top and bottom dimmed</Text>
+</Box>
+```
+
+## Partial Borders
+
+Show only specific border sides:
+
+```tsx
+{/* Top border only */}
+<Box
+  borderStyle="single"
+  borderTop={true}
+  borderRight={false}
+  borderBottom={false}
+  borderLeft={false}
+>
+  <Text>Header</Text>
+</Box>
+
+{/* Left border only (like a quote) */}
+<Box
+  borderStyle="bold"
+  borderTop={false}
+  borderRight={false}
+  borderBottom={false}
+  borderLeft={true}
+  borderLeftColor="blue"
+  paddingLeft={1}
+>
+  <Text>This is a quote or important note</Text>
+</Box>
+```
+
+## Custom Border Characters
+
+Create completely custom borders:
+
+```tsx
+<Box
+  borderStyle={{
+    topLeft: '↘',
+    top: '↓',
+    topRight: '↙',
+    left: '→',
+    bottomLeft: '↗',
+    bottom: '↑',
+    bottomRight: '↖',
+    right: '←'
+  }}
+>
+  <Text>Custom arrows</Text>
+</Box>
+
+<Box
+  borderStyle={{
+    topLeft: '╔',
+    top: '═',
+    topRight: '╗',
+    left: '║',
+    bottomLeft: '╚',
+    bottom: '═',
+    bottomRight: '╝',
+    right: '║'
+  }}
+>
+  <Text>Custom double border</Text>
+</Box>
+```
+
+## Background Colors
+
+Add background colors to boxes:
+
+```tsx
+import React from 'react';
+import {Box, Text} from 'ink';
+
+function BoxBackgrounds() {
+  return (
+    <Box flexDirection="column" gap={1}>
+      <Box backgroundColor="red" width={10} height={3} alignSelf="flex-start">
+        <Text>Red</Text>
+      </Box>
+
+      <Box backgroundColor="#FF8800" width={10} height={3} alignSelf="flex-start">
+        <Text>Orange</Text>
+      </Box>
+
+      <Box backgroundColor="rgb(0,255,0)" width={10} height={3} alignSelf="flex-start">
+        <Text>Green</Text>
+      </Box>
+    </Box>
+  );
+}
+```
+
+## Running the Background Example
+
+```bash
+npm run example examples/box-backgrounds
+```
+
+## Background with Border and Padding
+
+Combine backgrounds with borders and padding:
+
+```tsx
+<Box
+  backgroundColor="blue"
+  borderStyle="round"
+  borderColor="white"
+  padding={1}
+  width={20}
+  height={5}
+>
+  <Text>Styled box</Text>
+</Box>
+```
+
+## Background Inheritance
+
+Background colors are inherited by child `<Text>` components:
+
+```tsx
+<Box backgroundColor="blue" alignSelf="flex-start">
+  <Text>Blue inherited </Text>
+  <Text backgroundColor="yellow">Yellow override </Text>
+  <Text>Blue inherited again</Text>
+</Box>
+```
+
+## Text Styling
+
+Style text within your bordered components:
+
+```tsx
+<Box borderStyle="round" borderColor="green" padding={1}>
+  <Text bold color="green">Success!</Text>
+</Box>
+
+<Box borderStyle="double" borderColor="red" padding={1}>
+  <Text bold color="red">Error: </Text>
+  <Text>Something went wrong</Text>
+</Box>
+
+<Box borderStyle="single" borderColor="yellow" padding={1}>
+  <Text backgroundColor="yellow" color="black">
+    Warning: This action cannot be undone
+  </Text>
+</Box>
+```
+
+## Common Patterns
+
+### Card Component
+
+```tsx
+function Card({title, children}) {
+  return (
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="cyan"
+      padding={1}
+    >
+      <Text bold color="cyan">{title}</Text>
+      <Box marginTop={1}>
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
+<Card title="User Info">
+  <Text>Name: John Doe</Text>
+  <Text>Email: john@example.com</Text>
+</Card>
+```
+
+### Alert Component
+
+```tsx
+function Alert({type = 'info', children}) {
+  const styles = {
+    error: { border: 'red', bg: 'red', icon: '✖' },
+    warning: { border: 'yellow', bg: 'yellow', icon: '⚠' },
+    success: { border: 'green', bg: 'green', icon: '✔' },
+    info: { border: 'blue', bg: 'blue', icon: 'ℹ' },
+  }[type];
+
+  return (
+    <Box
+      borderStyle="round"
+      borderColor={styles.border}
+      backgroundColor={styles.bg}
+      padding={1}
+    >
+      <Text bold>{styles.icon} </Text>
+      <Text>{children}</Text>
+    </Box>
+  );
+}
+
+<Alert type="error">Failed to connect to server</Alert>
+<Alert type="success">Changes saved successfully</Alert>
+```
+
+### Panel with Header
+
+```tsx
+function Panel({header, children}) {
+  return (
+    <Box flexDirection="column" borderStyle="single">
+      <Box
+        backgroundColor="blue"
+        paddingX={1}
+        justifyContent="center"
+      >
+        <Text bold color="white">{header}</Text>
+      </Box>
+      <Box padding={1}>
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
+<Panel header="Settings">
+  <Text>Option 1: Enabled</Text>
+  <Text>Option 2: Disabled</Text>
+</Panel>
+```
+
+### Sidebar/Quote
+
+```tsx
+<Box
+  borderStyle="bold"
+  borderTop={false}
+  borderRight={false}
+  borderBottom={false}
+  borderLeftColor="blue"
+  paddingLeft={2}
+>
+  <Text dimColor>"To be or not to be, that is the question."</Text>
+</Box>
+```
+
+## Color Reference
+
+Ink supports multiple color formats:
+
+### Named Colors
+```tsx
+color="black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "gray"
+```
+
+### Hex Colors
+```tsx
+color="#FF0000"    // Red
+color="#00FF00"    // Green
+color="#0000FF"    // Blue
+```
+
+### RGB Colors
+```tsx
+color="rgb(255, 0, 0)"      // Red
+color="rgb(0, 255, 0)"      // Green
+color="rgb(0, 0, 255)"      // Blue
+```
+
+## Best Practices
+
+1. **Use borders sparingly** - Too many borders can clutter the interface
+2. **Match border colors to content** - Red for errors, green for success, etc.
+3. **Consider terminal themes** - Some users have dark terminals, others light
+4. **Test with different widths** - Ensure borders resize properly
+5. **Use padding** - Give content breathing room inside bordered boxes
+6. **Combine with layout** - Use `flexDirection`, `justifyContent`, etc. with borders
+
+## Next Steps
+
+- Explore [layout patterns](/examples/layout-patterns) for arranging components
+- Read the [`<Box>` component documentation](/components/box)
+- Read the [`<Text>` component documentation](/components/text)
+- Check out the [styling guide](/concepts/styling)

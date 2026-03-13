@@ -1,0 +1,455 @@
+---
+title: Testing
+description: Testing Ink components and CLI applications
+---
+
+## Overview
+
+Ink provides the `renderToString` function for testing components without starting a full terminal application. This makes it easy to write unit tests for your CLI components.
+
+## renderToString Function
+
+The `renderToString` function renders a React component tree synchronously and returns the output as a string:
+
+```tsx
+import {renderToString, Text, Box} from 'ink';
+
+const output = renderToString(
+	<Box padding={1}>
+		<Text color="green">Hello World</Text>
+	</Box>,
+	{columns: 40}
+);
+
+console.log(output);
+```
+
+### Function Signature
+
+```tsx
+renderToString(node: ReactNode, options?: RenderToStringOptions): string
+```
+
+### Options
+
+```tsx
+type RenderToStringOptions = {
+	/**
+	 * Width of the virtual terminal in columns.
+	 * @default 80
+	 */
+	columns?: number;
+};
+```
+
+## How It Works
+
+`renderToString` differs from `render()` in several important ways:
+
+<Card title="Synchronous Rendering" icon="bolt">
+Renders the component tree synchronously and returns immediately with the output string.
+</Card>
+
+<Card title="No Terminal I/O" icon="terminal">
+Does not write to stdout, does not set up terminal event listeners, and does not manipulate the terminal.
+</Card>
+
+<Card title="Virtual Terminal" icon="window-maximize">
+Uses a configurable virtual terminal width (default: 80 columns).
+</Card>
+
+### Hook Behavior
+
+Terminal-specific hooks return default no-op values:
+
+- `useInput` - Returns a function that does nothing
+- `useStdin` - Returns default stdin values
+- `useStdout` - Returns default stdout values
+- `useStderr` - Returns default stderr values
+- `useApp` - Returns default app methods
+- `useFocus` - Returns default focus values
+- `useFocusManager` - Returns default focus manager
+
+<Note>
+These hooks will not throw errors, but they won't function as they would in a live terminal.
+</Note>
+
+### Effect Timing
+
+- `useEffect` callbacks execute during rendering but state updates they trigger won't affect the returned output
+- `useLayoutEffect` callbacks fire synchronously during commit, so their state updates **will** be reflected
+- The `<Static>` component is fully supported
+
+## Basic Testing Example
+
+Here's a simple test using Jest:
+
+```tsx
+import {renderToString, Text, Box} from 'ink';
+
+describe('MyComponent', () => {
+	it('renders greeting', () => {
+		const output = renderToString(
+			<Box>
+				<Text color="green">Hello, World!</Text>
+			</Box>
+		);
+
+		expect(output).toContain('Hello, World!');
+	});
+
+	it('renders with correct layout', () => {
+		const output = renderToString(
+			<Box flexDirection="column">
+				<Text>Line 1</Text>
+				<Text>Line 2</Text>
+			</Box>
+		);
+
+		expect(output).toBe('Line 1\nLine 2');
+	});
+});
+```
+
+## Testing Layout
+
+Test how components lay out at different terminal widths:
+
+```tsx
+import {renderToString, Box, Text} from 'ink';
+
+test('adapts to narrow terminals', () => {
+	const output = renderToString(
+		<Box width="100%">
+			<Text>This is a long line of text that should wrap</Text>
+		</Box>,
+		{columns: 20}
+	);
+
+	// Text should wrap at 20 columns
+	expect(output.split('\n').length).toBeGreaterThan(1);
+});
+
+test('uses full width on wide terminals', () => {
+	const output = renderToString(
+		<Box width="100%">
+			<Text>Short text</Text>
+		</Box>,
+		{columns: 100}
+	);
+
+	// Should not wrap
+	expect(output).not.toContain('\n');
+});
+```
+
+## Testing Colors and Styles
+
+Color and style properties generate ANSI escape codes:
+
+```tsx
+import {renderToString, Text} from 'ink';
+import stripAnsi from 'strip-ansi';
+
+test('applies color', () => {
+	const output = renderToString(
+		<Text color="green">Success</Text>
+	);
+
+	// Output contains ANSI codes
+	expect(output).toContain('\x1b[');
+
+	// Strip ANSI to test content
+	expect(stripAnsi(output)).toBe('Success');
+});
+
+test('applies bold formatting', () => {
+	const output = renderToString(
+		<Text bold>Important</Text>
+	);
+
+	expect(output).toContain('\x1b[1m'); // Bold ANSI code
+	expect(stripAnsi(output)).toBe('Important');
+});
+```
+
+<Note>
+Use the [strip-ansi](https://github.com/chalk/strip-ansi) package to remove ANSI codes when testing text content.
+</Note>
+
+## Testing Borders
+
+Test border rendering:
+
+```tsx
+import {renderToString, Box, Text} from 'ink';
+
+test('renders borders', () => {
+	const output = renderToString(
+		<Box borderStyle="single">
+			<Text>Content</Text>
+		</Box>
+	);
+
+	// Single border uses ┌ ─ ┐ │ └ ┘ characters
+	expect(output).toContain('┌');
+	expect(output).toContain('─');
+	expect(output).toContain('┐');
+	expect(output).toContain('Content');
+});
+
+test('renders round borders', () => {
+	const output = renderToString(
+		<Box borderStyle="round">
+			<Text>Content</Text>
+		</Box>
+	);
+
+	// Round borders use ╭ ╮ ╰ ╯ characters
+	expect(output).toContain('╭');
+	expect(output).toContain('╮');
+});
+```
+
+## Testing Static Content
+
+The `<Static>` component works with `renderToString`:
+
+```tsx
+import {renderToString, Static, Box, Text} from 'ink';
+
+test('renders static items', () => {
+	const items = [
+		{id: 1, text: 'Item 1'},
+		{id: 2, text: 'Item 2'},
+		{id: 3, text: 'Item 3'}
+	];
+
+	const output = renderToString(
+		<Static items={items}>
+			{item => (
+				<Box key={item.id}>
+					<Text>{item.text}</Text>
+				</Box>
+			)}
+		</Static>
+	);
+
+	expect(output).toContain('Item 1');
+	expect(output).toContain('Item 2');
+	expect(output).toContain('Item 3');
+});
+```
+
+## Testing Component Props
+
+Test how components respond to different props:
+
+```tsx
+import {renderToString, Text} from 'ink';
+
+const StatusMessage = ({status, message}) => (
+	<Text color={status === 'success' ? 'green' : 'red'}>
+		{status === 'success' ? '✔' : '✖'} {message}
+	</Text>
+);
+
+test('renders success status', () => {
+	const output = renderToString(
+		<StatusMessage status="success" message="Operation completed" />
+	);
+
+	expect(stripAnsi(output)).toContain('✔ Operation completed');
+});
+
+test('renders error status', () => {
+	const output = renderToString(
+		<StatusMessage status="error" message="Operation failed" />
+	);
+
+	expect(stripAnsi(output)).toContain('✖ Operation failed');
+});
+```
+
+## Snapshot Testing
+
+Use snapshot testing for complex layouts:
+
+```tsx
+import {renderToString, Box, Text} from 'ink';
+
+test('renders dashboard layout', () => {
+	const output = renderToString(
+		<Box flexDirection="column" padding={2}>
+			<Box borderStyle="single" marginBottom={1}>
+				<Text bold>Dashboard</Text>
+			</Box>
+			<Box>
+				<Text>Status: </Text>
+				<Text color="green">Online</Text>
+			</Box>
+		</Box>,
+		{columns: 40}
+	);
+
+	expect(output).toMatchSnapshot();
+});
+```
+
+<Warning>
+Snapshot tests with ANSI codes can be brittle. Consider using `strip-ansi` before taking snapshots, or use snapshot serializers.
+</Warning>
+
+## Testing Error Handling
+
+Test how components handle errors:
+
+```tsx
+import {renderToString, Text} from 'ink';
+
+const ErrorBoundary = ({error, children}) => {
+	if (error) {
+		return <Text color="red">Error: {error.message}</Text>;
+	}
+	return children;
+};
+
+test('displays error message', () => {
+	const error = new Error('Something went wrong');
+
+	const output = renderToString(
+		<ErrorBoundary error={error}>
+			<Text>Normal content</Text>
+		</ErrorBoundary>
+	);
+
+	expect(stripAnsi(output)).toContain('Error: Something went wrong');
+});
+```
+
+## Continuous Integration
+
+Ink apps work in CI environments because they detect non-interactive environments and adjust behavior:
+
+### Package.json Script
+
+```json
+{
+	"scripts": {
+		"test": "jest",
+		"test:ci": "jest --ci"
+	}
+}
+```
+
+### GitHub Actions Example
+
+```yaml
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm install
+      - run: npm test
+```
+
+### CI Considerations
+
+<Card title="No TTY" icon="terminal">
+CI environments typically don't have a TTY. Ink automatically detects this and adjusts rendering.
+</Card>
+
+<Card title="Use renderToString for Tests" icon="vial">
+Prefer `renderToString` for unit tests rather than spawning the full app with `render()`.
+</Card>
+
+<Card title="Test Non-Interactive Mode" icon="robot">
+Test that your app works correctly when `process.stdout.isTTY` is false.
+</Card>
+
+## Best Practices
+
+<Card title="Test Business Logic Separately" icon="code">
+Extract business logic into separate functions and test them independently from UI components.
+</Card>
+
+<Card title="Use strip-ansi for Content Tests" icon="eraser">
+When testing text content, strip ANSI codes to avoid brittle tests.
+</Card>
+
+<Card title="Test Different Terminal Widths" icon="arrows-left-right">
+Test your layouts at various widths (narrow, medium, wide) using the `columns` option.
+</Card>
+
+<Card title="Mock External Dependencies" icon="cube">
+Mock file system operations, network requests, and other external dependencies in your tests.
+</Card>
+
+<Card title="Test Edge Cases" icon="triangle-exclamation">
+Test empty states, loading states, error states, and boundary conditions.
+</Card>
+
+## Complete Test Example
+
+Here's a complete test file example:
+
+```tsx
+import {renderToString, Box, Text} from 'ink';
+import stripAnsi from 'strip-ansi';
+
+const TestResults = ({passed, failed, total}) => (
+	<Box flexDirection="column">
+		<Text bold>Test Results</Text>
+		<Text color="green">Passed: {passed}</Text>
+		<Text color="red">Failed: {failed}</Text>
+		<Text>Total: {total}</Text>
+	</Box>
+);
+
+describe('TestResults', () => {
+	it('renders all test counts', () => {
+		const output = renderToString(
+			<TestResults passed={10} failed={2} total={12} />
+		);
+
+		const clean = stripAnsi(output);
+		expect(clean).toContain('Passed: 10');
+		expect(clean).toContain('Failed: 2');
+		expect(clean).toContain('Total: 12');
+	});
+
+	it('uses correct colors', () => {
+		const output = renderToString(
+			<TestResults passed={10} failed={2} total={12} />
+		);
+
+		// Contains ANSI color codes
+		expect(output).toContain('\x1b[');
+	});
+
+	it('adapts to narrow terminals', () => {
+		const output = renderToString(
+			<TestResults passed={10} failed={2} total={12} />,
+			{columns: 20}
+		);
+
+		expect(stripAnsi(output)).toMatchSnapshot();
+	});
+
+	it('handles zero failures', () => {
+		const output = renderToString(
+			<TestResults passed={12} failed={0} total={12} />
+		);
+
+		expect(stripAnsi(output)).toContain('Failed: 0');
+	});
+});
+```

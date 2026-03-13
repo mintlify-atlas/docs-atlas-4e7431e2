@@ -1,0 +1,204 @@
+---
+title: useInput
+description: Handle keyboard input from users in your CLI application
+---
+
+`useInput` is a React hook that handles user keyboard input. It's a convenient alternative to using `useStdin` and listening for data events directly.
+
+## Import
+
+```jsx
+import {useInput} from 'ink';
+```
+
+## Usage
+
+```jsx
+import {useInput, useApp, Text} from 'ink';
+
+const UserInput = () => {
+  const {exit} = useApp();
+  
+  useInput((input, key) => {
+    if (input === 'q') {
+      exit();
+    }
+    
+    if (key.leftArrow) {
+      // Handle left arrow key
+    }
+  });
+  
+  return <Text>Press 'q' to exit</Text>;
+};
+```
+
+## Signature
+
+```typescript
+useInput(inputHandler: (input: string, key: Key) => void, options?: Options): void
+```
+
+## Parameters
+
+<ParamField path="inputHandler" type="function" required>
+  Callback function invoked for each input event.
+  
+  **Parameters:**
+  - `input` (string) - The input character(s) received. Empty string for non-printable keys.
+  - `key` (Key) - Object containing information about which key was pressed.
+</ParamField>
+
+<ParamField path="options.isActive" type="boolean" default="true">
+  Enable or disable capturing of user input. Useful when there are multiple `useInput` hooks to avoid handling the same input multiple times.
+</ParamField>
+
+## Key Object
+
+The `key` parameter passed to your handler contains boolean properties for each special key:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `leftArrow` | boolean | Left arrow key was pressed |
+| `rightArrow` | boolean | Right arrow key was pressed |
+| `upArrow` | boolean | Up arrow key was pressed |
+| `downArrow` | boolean | Down arrow key was pressed |
+| `return` | boolean | Return (Enter) key was pressed |
+| `escape` | boolean | Escape key was pressed |
+| `ctrl` | boolean | Ctrl key was pressed |
+| `shift` | boolean | Shift key was pressed |
+| `tab` | boolean | Tab key was pressed |
+| `backspace` | boolean | Backspace key was pressed |
+| `delete` | boolean | Delete key was pressed |
+| `pageDown` | boolean | Page Down key was pressed |
+| `pageUp` | boolean | Page Up key was pressed |
+| `home` | boolean | Home key was pressed |
+| `end` | boolean | End key was pressed |
+| `meta` | boolean | Meta key was pressed |
+| `super` | boolean | Super key (Cmd/Win) was pressed (requires kitty keyboard protocol) |
+| `hyper` | boolean | Hyper key was pressed (requires kitty keyboard protocol) |
+| `capsLock` | boolean | Caps Lock is active (requires kitty keyboard protocol) |
+| `numLock` | boolean | Num Lock is active (requires kitty keyboard protocol) |
+| `eventType` | 'press' \| 'repeat' \| 'release' \| undefined | Type of key event (requires kitty keyboard protocol) |
+
+## Examples
+
+### Basic Input Handling
+
+```jsx
+import {useState} from 'react';
+import {useInput, Text} from 'ink';
+
+const Example = () => {
+  const [input, setInput] = useState('');
+  
+  useInput((char) => {
+    setInput(prev => prev + char);
+  });
+  
+  return <Text>You typed: {input}</Text>;
+};
+```
+
+### Arrow Key Navigation
+
+```jsx
+import {useState} from 'react';
+import {useInput, Box, Text} from 'ink';
+
+const Robot = () => {
+  const [x, setX] = useState(5);
+  const [y, setY] = useState(5);
+  
+  useInput((input, key) => {
+    if (key.leftArrow) {
+      setX(Math.max(0, x - 1));
+    }
+    if (key.rightArrow) {
+      setX(Math.min(20, x + 1));
+    }
+    if (key.upArrow) {
+      setY(Math.max(0, y - 1));
+    }
+    if (key.downArrow) {
+      setY(Math.min(10, y + 1));
+    }
+  });
+  
+  return (
+    <Box flexDirection="column">
+      <Text>Use arrow keys to move</Text>
+      <Box height={12} paddingLeft={x} paddingTop={y}>
+        <Text>^_^</Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Conditional Input Handling
+
+```jsx
+import {useState} from 'react';
+import {useInput, Text} from 'ink';
+
+const Example = () => {
+  const [isActive, setIsActive] = useState(true);
+  
+  useInput((input) => {
+    console.log('Received:', input);
+  }, {
+    isActive
+  });
+  
+  return (
+    <Text>
+      Input handler is {isActive ? 'active' : 'inactive'}
+    </Text>
+  );
+};
+```
+
+### Keyboard Shortcuts
+
+```jsx
+import {useInput, useApp, Text} from 'ink';
+
+const Example = () => {
+  const {exit} = useApp();
+  
+  useInput((input, key) => {
+    // Ctrl+C
+    if (input === 'c' && key.ctrl) {
+      console.log('Exiting...');
+      exit();
+    }
+    
+    // Ctrl+S
+    if (input === 's' && key.ctrl) {
+      console.log('Saving...');
+    }
+    
+    // Escape
+    if (key.escape) {
+      console.log('Cancelled');
+    }
+  });
+  
+  return <Text>Press Ctrl+C to exit, Ctrl+S to save</Text>;
+};
+```
+
+## Behavior Notes
+
+- When a single character is typed, the callback is invoked immediately with that character
+- When text is pasted and it's more than one character, the callback is called once with the entire string
+- For pasted content, consider using [usePaste](/hooks/use-paste) which provides better paste handling with bracketed paste mode
+- The hook automatically enables raw mode on stdin when active
+- Multiple `useInput` hooks can coexist; use the `isActive` option to control which one processes input
+
+## Related
+
+- [usePaste](/hooks/use-paste) - Handle pasted text separately from typed input
+- [useStdin](/hooks/use-stdin) - Access the stdin stream directly
+- [useApp](/hooks/use-app) - Control application lifecycle

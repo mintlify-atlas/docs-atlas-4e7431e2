@@ -1,0 +1,243 @@
+---
+title: Text Props
+description: Complete reference for Text component properties
+---
+
+This component can display text and change its style to make it bold, underlined, italic, or strikethrough.
+
+<Note>
+  `<Text>` allows only text nodes and nested `<Text>` components inside of it. For example, `<Box>` component can't be used inside `<Text>`.
+</Note>
+
+## Styling
+
+<ParamField path="color" type="string">
+  Change text color. Ink uses [Chalk](https://github.com/chalk/chalk) under the hood, so all its functionality is supported.
+
+  Accepts:
+  - Named colors: `'black'`, `'red'`, `'green'`, `'yellow'`, `'blue'`, `'magenta'`, `'cyan'`, `'white'`, `'gray'`, etc.
+  - Hex colors: `'#005cc5'`
+  - RGB colors: `'rgb(232, 131, 136)'`
+
+  ```jsx
+  <Text color="green">Green</Text>
+  <Text color="#005cc5">Blue</Text>
+  <Text color="rgb(232, 131, 136)">Red</Text>
+  ```
+</ParamField>
+
+<ParamField path="backgroundColor" type="string">
+  Same as `color` above, but for background.
+
+  ```jsx
+  <Text backgroundColor="green" color="white">Green</Text>
+  <Text backgroundColor="#005cc5" color="white">Blue</Text>
+  <Text backgroundColor="rgb(232, 131, 136)" color="white">Red</Text>
+  ```
+</ParamField>
+
+<ParamField path="dimColor" type="boolean" default="false">
+  Dim the color (make it less bright).
+
+  ```jsx
+  <Text color="red" dimColor>
+    Dimmed Red
+  </Text>
+  ```
+</ParamField>
+
+<ParamField path="bold" type="boolean" default="false">
+  Make the text bold.
+
+  ```jsx
+  <Text bold>Bold text</Text>
+  ```
+</ParamField>
+
+<ParamField path="italic" type="boolean" default="false">
+  Make the text italic.
+
+  ```jsx
+  <Text italic>Italic text</Text>
+  ```
+</ParamField>
+
+<ParamField path="underline" type="boolean" default="false">
+  Make the text underlined.
+
+  ```jsx
+  <Text underline>Underlined text</Text>
+  ```
+</ParamField>
+
+<ParamField path="strikethrough" type="boolean" default="false">
+  Make the text crossed out with a line.
+
+  ```jsx
+  <Text strikethrough>Strikethrough text</Text>
+  ```
+</ParamField>
+
+<ParamField path="inverse" type="boolean" default="false">
+  Inverse background and foreground colors.
+
+  ```jsx
+  <Text inverse color="yellow">
+    Inversed Yellow
+  </Text>
+  ```
+</ParamField>
+
+## Layout
+
+<ParamField path="wrap" type="'wrap' | 'truncate' | 'truncate-start' | 'truncate-middle' | 'truncate-end'" default="wrap">
+  This property tells Ink to wrap or truncate text if its width is larger than the container.
+
+  - `wrap` - Ink will wrap text and split it into multiple lines
+  - `truncate` (alias for `truncate-end`) - Truncate text at the end with `…`
+  - `truncate-start` - Truncate text at the start with `…`
+  - `truncate-middle` - Truncate text in the middle with `…`
+  - `truncate-end` - Truncate text at the end with `…`
+
+  ```jsx
+  <Box width={7}>
+    <Text>Hello World</Text>
+  </Box>
+  // => 'Hello\nWorld'
+
+  <Box width={7}>
+    <Text wrap="truncate">Hello World</Text>
+  </Box>
+  // => 'Hello…'
+
+  <Box width={7}>
+    <Text wrap="truncate-middle">Hello World</Text>
+  </Box>
+  // => 'He…ld'
+
+  <Box width={7}>
+    <Text wrap="truncate-start">Hello World</Text>
+  </Box>
+  // => '…World'
+  ```
+</ParamField>
+
+## Accessibility
+
+<ParamField path="aria-label" type="string">
+  A label for the element for screen readers.
+
+  ```jsx
+  <Text aria-label="Loading indicator">⌛</Text>
+  ```
+</ParamField>
+
+<ParamField path="aria-hidden" type="boolean">
+  Hide the element from screen readers.
+
+  ```jsx
+  <Text aria-hidden>───</Text>
+  ```
+</ParamField>
+
+## Examples
+
+### Color Combinations
+
+```jsx
+import {Text} from 'ink';
+
+const ColorDemo = () => (
+  <>
+    <Text color="green">I am green</Text>
+    <Text color="black" backgroundColor="white">
+      I am black on white
+    </Text>
+    <Text color="#ffffff">I am white</Text>
+  </>
+);
+```
+
+### Text Styles
+
+```jsx
+import {Text} from 'ink';
+
+const StyleDemo = () => (
+  <>
+    <Text bold>I am bold</Text>
+    <Text italic>I am italic</Text>
+    <Text underline>I am underline</Text>
+    <Text strikethrough>I am strikethrough</Text>
+    <Text inverse>I am inversed</Text>
+  </>
+);
+```
+
+### Combining Styles
+
+```jsx
+import {Text} from 'ink';
+
+const Combined = () => (
+  <Text color="cyan" bold underline>
+    Bold, underlined, and cyan
+  </Text>
+);
+```
+
+### Text Wrapping
+
+```jsx
+import {Box, Text} from 'ink';
+
+const WrapDemo = () => (
+  <Box flexDirection="column" width={20}>
+    <Text>This is a long text that will wrap to multiple lines</Text>
+    
+    <Text wrap="truncate">
+      This text will be truncated with ellipsis
+    </Text>
+    
+    <Text wrap="truncate-middle">
+      This text will be truncated in the middle
+    </Text>
+  </Box>
+);
+```
+
+### Nested Text
+
+```jsx
+import {Text} from 'ink';
+
+const Nested = () => (
+  <Text>
+    Normal text <Text color="green">green text</Text> normal again
+    <Text bold> and bold</Text>
+  </Text>
+);
+```
+
+### Status Messages
+
+```jsx
+import {Text} from 'ink';
+
+const StatusMessages = ({status}) => (
+  <>
+    {status === 'success' && (
+      <Text color="green" bold>✓ Success</Text>
+    )}
+    {status === 'error' && (
+      <Text color="red" bold>✗ Error</Text>
+    )}
+    {status === 'warning' && (
+      <Text color="yellow" bold>⚠ Warning</Text>
+    )}
+    {status === 'info' && (
+      <Text color="blue">ⓘ Info</Text>
+    )}
+  </>
+);
+```

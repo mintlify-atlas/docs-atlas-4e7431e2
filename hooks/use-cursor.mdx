@@ -1,0 +1,212 @@
+---
+title: 'useCursor'
+description: 'React hook for controlling terminal cursor position in Ink'
+---
+
+`useCursor` is a React hook that returns methods to control the terminal cursor position. Setting a cursor position makes the cursor visible at the specified coordinates (relative to the Ink output origin).
+
+This is essential for IME (Input Method Editor) support, where the composing character is displayed at the cursor location.
+
+## Usage
+
+```tsx
+import {useState} from 'react';
+import {Box, Text, useCursor} from 'ink';
+import stringWidth from 'string-width';
+
+const TextInput = () => {
+  const [text, setText] = useState('');
+  const {setCursorPosition} = useCursor();
+
+  const prompt = '> ';
+  setCursorPosition({x: stringWidth(prompt + text), y: 1});
+
+  return (
+    <Box flexDirection="column">
+      <Text>Type here:</Text>
+      <Text>{prompt}{text}</Text>
+    </Box>
+  );
+};
+```
+
+## Return Value
+
+Returns an object with the following method:
+
+<ResponseField name="setCursorPosition" type="(position: CursorPosition | undefined) => void">
+  Set the cursor position relative to the Ink output. Pass `undefined` to hide the cursor.
+</ResponseField>
+
+## Types
+
+### CursorPosition
+
+The cursor position object has the following properties:
+
+<ParamField path="x" type="number" required>
+  Column position (0-based). Use [`string-width`](https://github.com/sindresorhus/string-width) to calculate `x` for strings containing wide characters (CJK, emoji).
+</ParamField>
+
+<ParamField path="y" type="number" required>
+  Row position from the top of the Ink output (0 = first line).
+</ParamField>
+
+## Examples
+
+### Basic Text Input with Cursor
+
+```tsx
+import React, {useState} from 'react';
+import stringWidth from 'string-width';
+import {render, Box, Text, useInput, useCursor} from 'ink';
+
+function App() {
+  const [text, setText] = useState('');
+  const {setCursorPosition} = useCursor();
+
+  useInput((input, key) => {
+    if (key.backspace || key.delete) {
+      setText(previous => previous.slice(0, -1));
+      return;
+    }
+
+    if (!key.ctrl && !key.meta && input) {
+      setText(previous => previous + input);
+    }
+  });
+
+  // Use stringWidth for correct cursor position with wide characters
+  const prompt = '> ';
+  setCursorPosition({x: stringWidth(prompt + text), y: 1});
+
+  return (
+    <Box flexDirection="column">
+      <Text>Type Korean (Ctrl+C to exit):</Text>
+      <Text>
+        {prompt}
+        {text}
+      </Text>
+    </Box>
+  );
+}
+
+render(<App />);
+```
+
+### Multi-line Input with Cursor
+
+```tsx
+import {useState} from 'react';
+import {Box, Text, useCursor, useInput} from 'ink';
+import stringWidth from 'string-width';
+
+const MultiLineInput = () => {
+  const [lines, setLines] = useState(['']);
+  const [cursorLine, setCursorLine] = useState(0);
+  const {setCursorPosition} = useCursor();
+
+  useInput((input, key) => {
+    if (key.return) {
+      setLines(prev => [...prev, '']);
+      setCursorLine(prev => prev + 1);
+      return;
+    }
+
+    if (key.upArrow) {
+      setCursorLine(prev => Math.max(0, prev - 1));
+      return;
+    }
+
+    if (key.downArrow) {
+      setCursorLine(prev => Math.min(lines.length - 1, prev + 1));
+      return;
+    }
+
+    if (input) {
+      setLines(prev => {
+        const newLines = [...prev];
+        newLines[cursorLine] += input;
+        return newLines;
+      });
+    }
+  });
+
+  // Position cursor at end of current line
+  setCursorPosition({
+    x: stringWidth(lines[cursorLine]),
+    y: cursorLine
+  });
+
+  return (
+    <Box flexDirection="column">
+      {lines.map((line, i) => (
+        <Text key={i}>{line}</Text>
+      ))}
+    </Box>
+  );
+};
+```
+
+### Hide Cursor
+
+```tsx
+import {useEffect} from 'react';
+import {useCursor} from 'ink';
+
+const HideCursorExample = () => {
+  const {setCursorPosition} = useCursor();
+
+  useEffect(() => {
+    // Hide cursor
+    setCursorPosition(undefined);
+  }, []);
+
+  return ...;
+};
+```
+
+### Position Cursor for IME Support
+
+```tsx
+import {useState} from 'react';
+import {Box, Text, useCursor, useInput} from 'ink';
+import stringWidth from 'string-width';
+
+const IMEInput = () => {
+  const [text, setText] = useState('');
+  const {setCursorPosition} = useCursor();
+
+  useInput((input, key) => {
+    if (key.backspace || key.delete) {
+      setText(previous => previous.slice(0, -1));
+      return;
+    }
+
+    if (!key.ctrl && !key.meta && input) {
+      setText(previous => previous + input);
+    }
+  });
+
+  // stringWidth handles wide characters correctly (Korean, Japanese, Chinese, emoji)
+  const prompt = '入力: ';
+  setCursorPosition({x: stringWidth(prompt + text), y: 0});
+
+  return <Text>{prompt}{text}</Text>;
+};
+```
+
+## Best Practices
+
+<Tip>
+  Always use [`string-width`](https://github.com/sindresorhus/string-width) to calculate cursor position when dealing with text that may contain wide characters (CJK characters, emoji, etc.). These characters take up 2 columns in the terminal.
+</Tip>
+
+<Note>
+  The cursor position is relative to the Ink output origin (0, 0), not the terminal screen. The first line of Ink output is y=0.
+</Note>
+
+## Related Hooks
+
+- [useInput](/hooks/use-input) - Handle keyboard input
+- [useWindowSize](/hooks/use-window-size) - Get terminal dimensions

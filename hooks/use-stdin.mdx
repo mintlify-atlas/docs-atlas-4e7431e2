@@ -1,0 +1,264 @@
+---
+title: useStdin
+description: Access the stdin stream and control raw mode in your CLI application
+---
+
+`useStdin` is a React hook that provides access to the stdin stream and utilities for controlling raw mode. This is useful when you need low-level control over input handling beyond what `useInput` provides.
+
+## Import
+
+```jsx
+import {useStdin} from 'ink';
+```
+
+## Usage
+
+```jsx
+import {useStdin, Text} from 'ink';
+
+const Example = () => {
+  const {stdin, isRawModeSupported} = useStdin();
+  
+  return (
+    <Text>
+      Raw mode supported: {isRawModeSupported ? 'yes' : 'no'}
+    </Text>
+  );
+};
+```
+
+## Return Value
+
+```typescript
+{
+  stdin: NodeJS.ReadStream;
+  setRawMode: (value: boolean) => void;
+  isRawModeSupported: boolean;
+}
+```
+
+## Properties
+
+### stdin
+
+<ParamField path="stdin" type="NodeJS.ReadStream">
+  The stdin stream passed to `render()` in `options.stdin`, or `process.stdin` by default. Useful if your app needs to handle user input at a low level.
+</ParamField>
+
+### setRawMode()
+
+<ParamField path="setRawMode" type="function">
+  Enable or disable raw mode on stdin. Ink exposes this function to properly handle Ctrl+C, so you should use Ink's `setRawMode` instead of `process.stdin.setRawMode` directly.
+  
+  **Parameters:**
+  - `value` (boolean) - `true` to enable raw mode, `false` to disable it
+  
+  **Warning:** This function will throw unless the current stdin supports `setRawMode`. Use `isRawModeSupported` to check support first.
+</ParamField>
+
+### isRawModeSupported
+
+<ParamField path="isRawModeSupported" type="boolean">
+  A boolean flag indicating whether the current stdin supports `setRawMode`. Components using raw mode should check this to gracefully handle environments where raw mode isn't supported.
+</ParamField>
+
+## Raw Mode
+
+Raw mode changes how the terminal processes input:
+
+- **Normal mode**: Input is line-buffered and processed by the terminal (editing, Ctrl+C, etc.)
+- **Raw mode**: Input is sent directly to your app character by character, without terminal processing
+
+Ink's `useInput` and `usePaste` hooks automatically enable raw mode when active.
+
+## Examples
+
+### Check Raw Mode Support
+
+```jsx
+import {useStdin, Text} from 'ink';
+
+const Example = () => {
+  const {isRawModeSupported} = useStdin();
+  
+  return isRawModeSupported ? (
+    <MyInputComponent />
+  ) : (
+    <Text color="red">
+      Raw mode is not supported in this environment
+    </Text>
+  );
+};
+```
+
+### Manual Raw Mode Control
+
+```jsx
+import {useEffect} from 'react';
+import {useStdin, Text} from 'ink';
+
+const Example = () => {
+  const {setRawMode, isRawModeSupported} = useStdin();
+  
+  useEffect(() => {
+    if (!isRawModeSupported) {
+      return;
+    }
+    
+    // Enable raw mode
+    setRawMode(true);
+    
+    // Disable when component unmounts
+    return () => {
+      setRawMode(false);
+    };
+  }, [setRawMode, isRawModeSupported]);
+  
+  return <Text>Raw mode enabled</Text>;
+};
+```
+
+### Direct Stream Access
+
+```jsx
+import {useEffect, useState} from 'react';
+import {useStdin, Text, Box} from 'ink';
+
+const ByteReader = () => {
+  const {stdin, setRawMode} = useStdin();
+  const [bytes, setBytes] = useState([]);
+  
+  useEffect(() => {
+    setRawMode(true);
+    
+    const handleData = (data) => {
+      const byteArray = Array.from(data);
+      setBytes(prev => [...prev, ...byteArray]);
+    };
+    
+    stdin.on('data', handleData);
+    
+    return () => {
+      stdin.off('data', handleData);
+      setRawMode(false);
+    };
+  }, [stdin, setRawMode]);
+  
+  return (
+    <Box flexDirection="column">
+      <Text>Received bytes:</Text>
+      <Text color="cyan">
+        {bytes.map(b => b.toString(16).padStart(2, '0')).join(' ')}
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Custom Input Parser
+
+```jsx
+import {useEffect, useState} from 'react';
+import {useStdin, Text} from 'ink';
+
+const CustomInput = () => {
+  const {stdin, setRawMode} = useStdin();
+  const [buffer, setBuffer] = useState('');
+  
+  useEffect(() => {
+    setRawMode(true);
+    
+    const handleData = (data) => {
+      const str = data.toString();
+      
+      // Custom parsing logic
+      if (str === '\r') {
+        console.log('Submitted:', buffer);
+        setBuffer('');
+      } else if (str === '\u007F') { // Backspace
+        setBuffer(prev => prev.slice(0, -1));
+      } else if (str === '\u0003') { // Ctrl+C
+        process.exit();
+      } else {
+        setBuffer(prev => prev + str);
+      }
+    };
+    
+    stdin.on('data', handleData);
+    
+    return () => {
+      stdin.off('data', handleData);
+      setRawMode(false);
+    };
+  }, [stdin, setRawMode]);
+  
+  return <Text>Input: {buffer}</Text>;
+};
+```
+
+### Fallback for Non-Interactive Environments
+
+```jsx
+import {useEffect} from 'react';
+import {useStdin, Text} from 'ink';
+
+const Example = () => {
+  const {stdin, isRawModeSupported} = useStdin();
+  
+  useEffect(() => {
+    if (isRawModeSupported) {
+      return; // Use interactive mode
+    }
+    
+    // Fallback: read from piped input
+    const chunks = [];
+    
+    stdin.on('data', (chunk) => {
+      chunks.push(chunk);
+    });
+    
+    stdin.on('end', () => {
+      const input = Buffer.concat(chunks).toString();
+      console.log('Received:', input);
+    });
+  }, [stdin, isRawModeSupported]);
+  
+  return (
+    <Text>
+      {isRawModeSupported 
+        ? 'Interactive mode' 
+        : 'Reading from pipe'}
+    </Text>
+  );
+};
+```
+
+## When to Use useStdin
+
+Use `useStdin` when you need:
+
+- **Low-level input control**: Direct access to the stdin stream
+- **Custom input parsing**: Implementing your own key parsing logic  
+- **Raw mode management**: Controlling when raw mode is enabled
+- **Environment detection**: Checking if the app is running interactively
+
+For most use cases, prefer the higher-level hooks:
+
+- Use [useInput](/hooks/use-input) for keyboard input handling
+- Use [usePaste](/hooks/use-paste) for paste handling
+
+## Environment Support
+
+Raw mode is supported when stdin is a TTY (interactive terminal). It's **not** supported when:
+
+- Input is piped: `echo "input" | your-cli`
+- Input is redirected: `your-cli < input.txt`
+- Running in non-interactive environments (CI, cron jobs, etc.)
+
+Always check `isRawModeSupported` before calling `setRawMode` to handle these cases gracefully.
+
+## Related
+
+- [useInput](/hooks/use-input) - Higher-level keyboard input handling
+- [usePaste](/hooks/use-paste) - Handle pasted text
+- [useStdout](/hooks/use-stdout) - Access stdout stream

@@ -1,0 +1,476 @@
+---
+title: Box
+description: Essential layout component using Flexbox for building CLI interfaces
+---
+
+The `<Box>` component is the fundamental building block for layouts in Ink. It's equivalent to `<div style="display: flex">` in the browser and uses Flexbox for positioning.
+
+## Basic Usage
+
+```tsx
+import {render, Box, Text} from 'ink';
+
+const App = () => (
+  <Box margin={2} padding={1} borderStyle="round">
+    <Text>Hello from a Box!</Text>
+  </Box>
+);
+
+render(<App />);
+```
+
+## Layout Properties
+
+### Dimensions
+
+<ParamField path="width" type="number | string">
+  Width in spaces or as a percentage of parent width.
+  
+  ```tsx
+  <Box width={10}>
+    <Text>Fixed width</Text>
+  </Box>
+  
+  <Box width="50%">
+    <Text>Half width</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="height" type="number | string">
+  Height in lines or as a percentage of parent height.
+  
+  ```tsx
+  <Box height={5}>
+    <Text>Fixed height</Text>
+  </Box>
+  
+  <Box height="50%">
+    <Text>Half height</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="minWidth" type="number">
+  Minimum width of the element. Percentages not yet supported.
+</ParamField>
+
+<ParamField path="minHeight" type="number | string">
+  Minimum height in lines or percentage of parent.
+</ParamField>
+
+<ParamField path="maxWidth" type="number">
+  Maximum width of the element. Percentages not yet supported.
+</ParamField>
+
+<ParamField path="maxHeight" type="number | string">
+  Maximum height in lines or percentage of parent.
+</ParamField>
+
+<ParamField path="aspectRatio" type="number">
+  Aspect ratio (width/height). Use with at least one size constraint.
+</ParamField>
+
+### Padding
+
+<ParamField path="padding" type="number" default="0">
+  Padding on all sides.
+  
+  ```tsx
+  <Box padding={2}>
+    <Text>Padded content</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="paddingX" type="number" default="0">
+  Horizontal padding (left and right).
+</ParamField>
+
+<ParamField path="paddingY" type="number" default="0">
+  Vertical padding (top and bottom).
+</ParamField>
+
+<ParamField path="paddingTop" type="number" default="0">
+  Top padding.
+</ParamField>
+
+<ParamField path="paddingBottom" type="number" default="0">
+  Bottom padding.
+</ParamField>
+
+<ParamField path="paddingLeft" type="number" default="0">
+  Left padding.
+</ParamField>
+
+<ParamField path="paddingRight" type="number" default="0">
+  Right padding.
+</ParamField>
+
+### Margin
+
+<ParamField path="margin" type="number" default="0">
+  Margin on all sides.
+  
+  ```tsx
+  <Box margin={2}>
+    <Text>Box with margin</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="marginX" type="number" default="0">
+  Horizontal margin (left and right).
+</ParamField>
+
+<ParamField path="marginY" type="number" default="0">
+  Vertical margin (top and bottom).
+</ParamField>
+
+<ParamField path="marginTop" type="number" default="0">
+  Top margin.
+</ParamField>
+
+<ParamField path="marginBottom" type="number" default="0">
+  Bottom margin.
+</ParamField>
+
+<ParamField path="marginLeft" type="number" default="0">
+  Left margin.
+</ParamField>
+
+<ParamField path="marginRight" type="number" default="0">
+  Right margin.
+</ParamField>
+
+## Flexbox Properties
+
+<ParamField path="flexDirection" type="'row' | 'row-reverse' | 'column' | 'column-reverse'">
+  Direction of flex items.
+  
+  ```tsx
+  <Box flexDirection="column">
+    <Text>First line</Text>
+    <Text>Second line</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="flexGrow" type="number" default="0">
+  How much the element should grow relative to siblings.
+  
+  ```tsx
+  <Box>
+    <Text>Label:</Text>
+    <Box flexGrow={1}>
+      <Text>Fills remaining space</Text>
+    </Box>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="flexShrink" type="number" default="1">
+  How much the element should shrink relative to siblings.
+</ParamField>
+
+<ParamField path="flexBasis" type="number | string">
+  Default size of element before remaining space is distributed.
+</ParamField>
+
+<ParamField path="flexWrap" type="'nowrap' | 'wrap' | 'wrap-reverse'">
+  Whether flex items should wrap to new lines.
+  
+  ```tsx
+  <Box width={10} flexWrap="wrap">
+    <Text>Item 1 </Text>
+    <Text>Item 2 </Text>
+    <Text>Item 3</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="alignItems" type="'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline'">
+  Align items on cross axis.
+  
+  ```tsx
+  <Box alignItems="center" height={5}>
+    <Text>Centered vertically</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="alignSelf" type="'auto' | 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline'" default="'auto'">
+  Override alignItems for individual element.
+</ParamField>
+
+<ParamField path="alignContent" type="'flex-start' | 'flex-end' | 'center' | 'stretch' | 'space-between' | 'space-around' | 'space-evenly'" default="'flex-start'">
+  Alignment between flex lines when wrapping.
+</ParamField>
+
+<ParamField path="justifyContent" type="'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly'">
+  Distribute items along main axis.
+  
+  ```tsx
+  <Box justifyContent="space-between">
+    <Text>Left</Text>
+    <Text>Right</Text>
+  </Box>
+  ```
+</ParamField>
+
+### Gap
+
+<ParamField path="gap" type="number" default="0">
+  Gap between columns and rows. Shorthand for columnGap and rowGap.
+  
+  ```tsx
+  <Box gap={1}>
+    <Text>A</Text>
+    <Text>B</Text>
+    <Text>C</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="columnGap" type="number" default="0">
+  Gap between columns.
+</ParamField>
+
+<ParamField path="rowGap" type="number" default="0">
+  Gap between rows.
+</ParamField>
+
+## Positioning
+
+<ParamField path="position" type="'relative' | 'absolute' | 'static'" default="'relative'">
+  Positioning method for the element.
+</ParamField>
+
+<ParamField path="top" type="number | string">
+  Top offset for positioned elements. Accepts numbers or percentages.
+</ParamField>
+
+<ParamField path="right" type="number | string">
+  Right offset for positioned elements.
+</ParamField>
+
+<ParamField path="bottom" type="number | string">
+  Bottom offset for positioned elements.
+</ParamField>
+
+<ParamField path="left" type="number | string">
+  Left offset for positioned elements.
+</ParamField>
+
+## Visual Properties
+
+<ParamField path="display" type="'flex' | 'none'" default="'flex'">
+  Set to `'none'` to hide the element.
+</ParamField>
+
+<ParamField path="overflow" type="'visible' | 'hidden'" default="'visible'">
+  Shorthand for overflowX and overflowY.
+</ParamField>
+
+<ParamField path="overflowX" type="'visible' | 'hidden'" default="'visible'">
+  Horizontal overflow behavior.
+</ParamField>
+
+<ParamField path="overflowY" type="'visible' | 'hidden'" default="'visible'">
+  Vertical overflow behavior.
+</ParamField>
+
+### Borders
+
+<ParamField path="borderStyle" type="'single' | 'double' | 'round' | 'bold' | 'singleDouble' | 'doubleSingle' | 'classic' | BoxStyle">
+  Border style. Can be a preset name or a custom border object.
+  
+  ```tsx
+  <Box borderStyle="round">
+    <Text>Rounded border</Text>
+  </Box>
+  
+  <Box borderStyle={{
+    topLeft: '↘',
+    top: '↓',
+    topRight: '↙',
+    left: '→',
+    bottomLeft: '↗',
+    bottom: '↑',
+    bottomRight: '↖',
+    right: '←'
+  }}>
+    <Text>Custom border</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="borderColor" type="string">
+  Border color. Shorthand for all border sides.
+  
+  ```tsx
+  <Box borderStyle="round" borderColor="green">
+    <Text>Green border</Text>
+  </Box>
+  ```
+</ParamField>
+
+<ParamField path="borderTopColor" type="string">
+  Top border color.
+</ParamField>
+
+<ParamField path="borderRightColor" type="string">
+  Right border color.
+</ParamField>
+
+<ParamField path="borderBottomColor" type="string">
+  Bottom border color.
+</ParamField>
+
+<ParamField path="borderLeftColor" type="string">
+  Left border color.
+</ParamField>
+
+<ParamField path="borderDimColor" type="boolean" default="false">
+  Dim all border colors.
+</ParamField>
+
+<ParamField path="borderTop" type="boolean" default="true">
+  Show top border.
+</ParamField>
+
+<ParamField path="borderRight" type="boolean" default="true">
+  Show right border.
+</ParamField>
+
+<ParamField path="borderBottom" type="boolean" default="true">
+  Show bottom border.
+</ParamField>
+
+<ParamField path="borderLeft" type="boolean" default="true">
+  Show left border.
+</ParamField>
+
+### Background
+
+<ParamField path="backgroundColor" type="string">
+  Background color for the box. Fills the entire area and is inherited by child `<Text>` components.
+  
+  ```tsx
+  <Box backgroundColor="blue" padding={1}>
+    <Text>Text on blue background</Text>
+  </Box>
+  ```
+</ParamField>
+
+## Accessibility
+
+<ParamField path="aria-label" type="string">
+  Label for screen readers.
+</ParamField>
+
+<ParamField path="aria-hidden" type="boolean">
+  Hide from screen readers.
+</ParamField>
+
+<ParamField path="aria-role" type="string">
+  ARIA role (button, checkbox, list, etc.).
+</ParamField>
+
+<ParamField path="aria-state" type="object">
+  ARIA state properties (busy, checked, disabled, etc.).
+</ParamField>
+
+## Examples
+
+### Border Styles
+
+From the Ink examples:
+
+```tsx
+import {Box, Text} from 'ink';
+
+const Borders = () => (
+  <Box flexDirection="column" padding={2}>
+    <Box>
+      <Box borderStyle="single" marginRight={2}>
+        <Text>single</Text>
+      </Box>
+      <Box borderStyle="double" marginRight={2}>
+        <Text>double</Text>
+      </Box>
+      <Box borderStyle="round" marginRight={2}>
+        <Text>round</Text>
+      </Box>
+      <Box borderStyle="bold">
+        <Text>bold</Text>
+      </Box>
+    </Box>
+  </Box>
+);
+```
+
+### Flexbox Layout
+
+```tsx
+import {Box, Text, Spacer} from 'ink';
+
+const Layout = () => (
+  <Box flexDirection="column" padding={1}>
+    {/* Header with space-between */}
+    <Box justifyContent="space-between">
+      <Text bold>My App</Text>
+      <Text dimColor>v1.0.0</Text>
+    </Box>
+    
+    {/* Content with spacer */}
+    <Box marginTop={1}>
+      <Text>Left aligned</Text>
+      <Spacer />
+      <Text>Right aligned</Text>
+    </Box>
+    
+    {/* Centered content */}
+    <Box justifyContent="center" marginTop={1}>
+      <Text>Centered text</Text>
+    </Box>
+  </Box>
+);
+```
+
+### Background Colors
+
+From the Ink examples:
+
+```tsx
+import {Box, Text} from 'ink';
+
+const Backgrounds = () => (
+  <Box flexDirection="column" gap={1}>
+    <Box backgroundColor="red" width={20} height={3}>
+      <Text>Red background</Text>
+    </Box>
+    
+    <Box backgroundColor="#FF8800" width={20} height={3}>
+      <Text>Orange background</Text>
+    </Box>
+    
+    <Box backgroundColor="rgb(0, 255, 0)" width={20} height={3}>
+      <Text>Green background</Text>
+    </Box>
+    
+    {/* Background inheritance */}
+    <Box backgroundColor="cyan">
+      <Text>Inherited </Text>
+      <Text backgroundColor="yellow">Override </Text>
+      <Text>Back to inherited</Text>
+    </Box>
+  </Box>
+);
+```
+
+## Related Components
+
+- [Text](/components/text) - Display text inside boxes
+- [Spacer](/components/spacer) - Flexible spacing
+- [Static](/components/static) - Static content above dynamic layouts

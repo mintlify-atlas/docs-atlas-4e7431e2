@@ -1,0 +1,60 @@
+---
+title: Hooks Overview
+description: React hooks for building interactive CLI applications with Ink
+---
+
+Ink provides a set of React hooks that allow you to interact with the terminal and manage your CLI application's lifecycle. These hooks give you access to standard streams, user input, and app lifecycle methods.
+
+## Available Hooks
+
+### Input Handling
+
+- [useInput](/hooks/use-input) - Handle keyboard input from users
+- [usePaste](/hooks/use-paste) - Handle pasted text with bracketed paste mode
+
+### App Lifecycle
+
+- [useApp](/hooks/use-app) - Access app lifecycle methods like `exit()` and `waitUntilRenderFlush()`
+
+### Standard Streams
+
+- [useStdin](/hooks/use-stdin) - Access stdin stream and raw mode controls
+- [useStdout](/hooks/use-stdout) - Access stdout stream and write directly to it
+- [useStderr](/hooks/use-stderr) - Access stderr stream and write directly to it
+
+## Usage Pattern
+
+All hooks follow React's standard hooks rules:
+
+- Only call hooks at the top level of your component
+- Only call hooks from React function components or custom hooks
+- Hooks that accept an `isActive` option can be dynamically enabled/disabled
+
+```jsx
+import {useInput, useApp} from 'ink';
+
+const MyComponent = () => {
+  const {exit} = useApp();
+  
+  useInput((input, key) => {
+    if (input === 'q') {
+      exit();
+    }
+  });
+  
+  return <Text>Press 'q' to exit</Text>;
+};
+```
+
+## Hook Combinations
+
+Many hooks work well together:
+
+- Combine `useInput` and `useApp` to handle user input and control app lifecycle
+- Use `usePaste` alongside `useInput` to handle both typed and pasted content
+- Access `useStdout` to write raw output while maintaining Ink's rendered UI
+
+## Related
+
+- [Components](/components/overview) - Built-in Ink components
+- [Examples](https://github.com/vadimdemedes/ink/tree/main/examples) - Code examples using hooks

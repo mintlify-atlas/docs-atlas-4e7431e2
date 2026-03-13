@@ -1,0 +1,221 @@
+---
+title: measureElement()
+description: Measure the dimensions of a Box element
+---
+
+Measure the dimensions of a particular `<Box>` element. Returns an object with `width` and `height` properties.
+
+This function is useful when your component needs to know the amount of available space it has. You can use it when you need to change the layout based on the length of its content.
+
+## Signature
+
+```typescript
+function measureElement(node: DOMElement): Output
+```
+
+## Parameters
+
+<ParamField path="node" type="DOMElement" required>
+  A reference to a Box element obtained via `useRef`.
+
+  ```jsx
+  const ref = useRef();
+  const dimensions = measureElement(ref.current);
+  ```
+</ParamField>
+
+## Return Value
+
+<ResponseField name="Output" type="object">
+  An object containing the measured dimensions.
+
+  <Expandable title="properties">
+    <ResponseField name="width" type="number">
+      Element width in columns.
+    </ResponseField>
+
+    <ResponseField name="height" type="number">
+      Element height in rows (lines).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Important Notes
+
+<Warning>
+  `measureElement()` returns `{width: 0, height: 0}` when called during render (before layout is calculated).
+
+  Call it from post-render code, such as:
+  - `useEffect`
+  - `useLayoutEffect`
+  - Input handlers
+  - Timer callbacks
+
+  When content changes, pass the relevant dependency to your effect so it re-measures after each update.
+</Warning>
+
+## Examples
+
+### Basic Usage
+
+```jsx
+import {useRef, useEffect, useState} from 'react';
+import {Box, Text, measureElement} from 'ink';
+
+const MeasureDemo = () => {
+  const ref = useRef();
+  const [size, setSize] = useState({width: 0, height: 0});
+
+  useEffect(() => {
+    if (ref.current) {
+      const dimensions = measureElement(ref.current);
+      setSize(dimensions);
+    }
+  }, []);
+
+  return (
+    <>
+      <Box ref={ref} padding={2} borderStyle="round">
+        <Text>Measure me!</Text>
+      </Box>
+      <Text>
+        Dimensions: {size.width}x{size.height}
+      </Text>
+    </>
+  );
+};
+```
+
+### Re-measure on Content Change
+
+```jsx
+import {useRef, useEffect, useState} from 'react';
+import {Box, Text, measureElement} from 'ink';
+
+const DynamicContent = ({content}) => {
+  const ref = useRef();
+  const [size, setSize] = useState({width: 0, height: 0});
+
+  useEffect(() => {
+    if (ref.current) {
+      const dimensions = measureElement(ref.current);
+      setSize(dimensions);
+    }
+  }, [content]); // Re-measure when content changes
+
+  return (
+    <Box flexDirection="column">
+      <Box ref={ref} borderStyle="single" padding={1}>
+        <Text>{content}</Text>
+      </Box>
+      <Text dimColor>
+        Content size: {size.width} columns × {size.height} rows
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Responsive Layout
+
+```jsx
+import {useRef, useEffect, useState} from 'react';
+import {Box, Text, measureElement} from 'ink';
+
+const ResponsiveBox = ({children}) => {
+  const ref = useRef();
+  const [layout, setLayout] = useState('horizontal');
+
+  useEffect(() => {
+    if (ref.current) {
+      const {width} = measureElement(ref.current);
+      // Switch to vertical layout if width is less than 40
+      setLayout(width < 40 ? 'vertical' : 'horizontal');
+    }
+  }, [children]);
+
+  return (
+    <Box 
+      ref={ref}
+      flexDirection={layout === 'vertical' ? 'column' : 'row'}
+    >
+      {children}
+    </Box>
+  );
+};
+```
+
+### Measure Multiple Elements
+
+```jsx
+import {useRef, useEffect, useState} from 'react';
+import {Box, Text, measureElement} from 'ink';
+
+const MultiMeasure = () => {
+  const headerRef = useRef();
+  const contentRef = useRef();
+  const footerRef = useRef();
+  const [sizes, setSizes] = useState({});
+
+  useEffect(() => {
+    const measurements = {
+      header: headerRef.current ? measureElement(headerRef.current) : {width: 0, height: 0},
+      content: contentRef.current ? measureElement(contentRef.current) : {width: 0, height: 0},
+      footer: footerRef.current ? measureElement(footerRef.current) : {width: 0, height: 0}
+    };
+    setSizes(measurements);
+  }, []);
+
+  return (
+    <Box flexDirection="column">
+      <Box ref={headerRef} borderStyle="single">
+        <Text bold>Header</Text>
+      </Box>
+      <Box ref={contentRef} padding={2}>
+        <Text>Main content area with more text</Text>
+      </Box>
+      <Box ref={footerRef}>
+        <Text dimColor>Footer</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text>
+          Header: {sizes.header?.width}×{sizes.header?.height} | 
+          Content: {sizes.content?.width}×{sizes.content?.height} | 
+          Footer: {sizes.footer?.width}×{sizes.footer?.height}
+        </Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Conditional Rendering Based on Size
+
+```jsx
+import {useRef, useEffect, useState} from 'react';
+import {Box, Text, measureElement} from 'ink';
+
+const AdaptiveUI = ({items}) => {
+  const ref = useRef();
+  const [showDetails, setShowDetails] = useState(true);
+
+  useEffect(() => {
+    if (ref.current) {
+      const {height} = measureElement(ref.current);
+      // Hide details if height is constrained
+      setShowDetails(height > 10);
+    }
+  }, [items]);
+
+  return (
+    <Box ref={ref} flexDirection="column" height={20}>
+      {items.map(item => (
+        <Box key={item.id} flexDirection="column">
+          <Text bold>{item.title}</Text>
+          {showDetails && <Text dimColor>{item.description}</Text>}
+        </Box>
+      ))}
+    </Box>
+  );
+};
+```

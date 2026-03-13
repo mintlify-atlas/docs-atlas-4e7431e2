@@ -1,0 +1,195 @@
+---
+title: 'useFocusManager'
+description: 'React hook for managing focus across all focusable components in Ink'
+---
+
+`useFocusManager` is a React hook that returns methods to enable or disable focus management for all components or manually switch focus to the next or previous components.
+
+## Usage
+
+```tsx
+import {Text, useFocusManager} from 'ink';
+
+const Example = () => {
+  const {activeId, focusNext} = useFocusManager();
+
+  return <Text>Focused: {activeId ?? 'none'}</Text>;
+};
+```
+
+## Return Value
+
+Returns an object with the following methods and properties:
+
+<ResponseField name="enableFocus" type="() => void">
+  Enable focus management for all components.
+
+  <Note>
+    You don't need to call this method manually unless you've disabled focus management. Focus management is enabled by default.
+  </Note>
+</ResponseField>
+
+<ResponseField name="disableFocus" type="() => void">
+  Disable focus management for all components. The currently active component (if there's one) will lose its focus.
+</ResponseField>
+
+<ResponseField name="focusNext" type="() => void">
+  Switch focus to the next focusable component. If there's no active component right now, focus will be given to the first focusable component. If the active component is the last in the list of focusable components, focus will be switched to the first focusable component.
+
+  <Note>
+    Ink calls this method automatically when user presses <kbd>Tab</kbd>.
+  </Note>
+</ResponseField>
+
+<ResponseField name="focusPrevious" type="() => void">
+  Switch focus to the previous focusable component. If there's no active component right now, focus will be given to the first focusable component. If the active component is the first in the list of focusable components, focus will be switched to the last focusable component.
+
+  <Note>
+    Ink calls this method automatically when user presses <kbd>Shift</kbd>+<kbd>Tab</kbd>.
+  </Note>
+</ResponseField>
+
+<ResponseField name="focus" type="(id: string) => void">
+  Switch focus to the component with the given `id`. If there's no component with that ID, focus is not changed.
+</ResponseField>
+
+<ResponseField name="activeId" type="string | undefined">
+  The ID of the currently focused component, or `undefined` if no component is focused.
+</ResponseField>
+
+## Examples
+
+### Display Active Focus ID
+
+```tsx
+import {Text, useFocusManager} from 'ink';
+
+const Example = () => {
+  const {activeId} = useFocusManager();
+
+  return <Text>Focused: {activeId ?? 'none'}</Text>;
+};
+```
+
+### Programmatic Focus Control
+
+```tsx
+import {useFocusManager, useInput} from 'ink';
+
+const Example = () => {
+  const {focus} = useFocusManager();
+
+  useInput(input => {
+    if (input === 's') {
+      // Focus the component with focus ID 'someId'
+      focus('someId');
+    }
+  });
+
+  return ...;
+};
+```
+
+### Manual Focus Navigation
+
+```tsx
+import {useEffect} from 'react';
+import {useFocusManager} from 'ink';
+
+const Example = () => {
+  const {focusNext, focusPrevious} = useFocusManager();
+
+  useEffect(() => {
+    // Manually move focus to next component
+    focusNext();
+  }, []);
+
+  return ...;
+};
+```
+
+### Enable/Disable Focus Management
+
+```tsx
+import {useEffect} from 'react';
+import {useFocusManager} from 'ink';
+
+const Example = () => {
+  const {enableFocus, disableFocus} = useFocusManager();
+
+  useEffect(() => {
+    // Disable focus management temporarily
+    disableFocus();
+
+    return () => {
+      // Re-enable on cleanup
+      enableFocus();
+    };
+  }, []);
+
+  return ...;
+};
+```
+
+### Focus by ID with Keyboard Shortcuts
+
+```tsx
+import React from 'react';
+import {
+  render,
+  Box,
+  Text,
+  useFocus,
+  useInput,
+  useFocusManager,
+} from 'ink';
+
+function Focus() {
+  const {focus} = useFocusManager();
+
+  useInput(input => {
+    if (input === '1') {
+      focus('1');
+    }
+
+    if (input === '2') {
+      focus('2');
+    }
+
+    if (input === '3') {
+      focus('3');
+    }
+  });
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box marginBottom={1}>
+        <Text>
+          Press Tab to focus next element, Shift+Tab to focus previous element,
+          Esc to reset focus.
+        </Text>
+      </Box>
+      <Item id="1" label="Press 1 to focus" />
+      <Item id="2" label="Press 2 to focus" />
+      <Item id="3" label="Press 3 to focus" />
+    </Box>
+  );
+}
+
+function Item({label, id}) {
+  const {isFocused} = useFocus({id});
+
+  return (
+    <Text>
+      {label} {isFocused ? <Text color="green">(focused)</Text> : null}
+    </Text>
+  );
+}
+
+render(<Focus />);
+```
+
+## Related Hooks
+
+- [useFocus](/hooks/use-focus) - Manage focus state for individual components
+- [useInput](/hooks/use-input) - Handle keyboard input

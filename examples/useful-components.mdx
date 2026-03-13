@@ -1,0 +1,358 @@
+---
+title: Useful Components
+description: A curated list of third-party Ink components for building CLIs
+---
+
+The Ink ecosystem includes many high-quality third-party components that extend Ink's functionality. These components are ready to use in your CLI applications.
+
+## Input Components
+
+### [ink-text-input](https://github.com/vadimdemedes/ink-text-input)
+
+A fully-featured text input component with cursor positioning, selection, and more.
+
+```tsx
+import TextInput from 'ink-text-input';
+
+const [value, setValue] = useState('');
+
+<TextInput value={value} onChange={setValue} />
+```
+
+### [ink-select-input](https://github.com/vadimdemedes/ink-select-input)
+
+A select (dropdown) input component with keyboard navigation.
+
+```tsx
+import SelectInput from 'ink-select-input';
+
+const items = [
+  {label: 'Red', value: 'red'},
+  {label: 'Green', value: 'green'},
+  {label: 'Blue', value: 'blue'}
+];
+
+<SelectInput items={items} onSelect={handleSelect} />
+```
+
+### [ink-multi-select](https://github.com/karaggeorge/ink-multi-select)
+
+Select one or more values from a list.
+
+```tsx
+import MultiSelect from 'ink-multi-select';
+
+<MultiSelect items={items} onSubmit={handleSubmit} />
+```
+
+### [ink-quicksearch-input](https://github.com/Eximchain/ink-quicksearch-input)
+
+Select component with fast, quicksearch-like navigation.
+
+### [ink-confirm-input](https://github.com/kevva/ink-confirm-input)
+
+Yes/No confirmation input.
+
+```tsx
+import ConfirmInput from 'ink-confirm-input';
+
+<ConfirmInput
+  label="Are you sure?"
+  onConfirm={handleConfirm}
+/>
+```
+
+### [ink-form](https://github.com/lukasbach/ink-form)
+
+Comprehensive form component with validation.
+
+### [ink-color-picker](https://github.com/sina-byn/ink-color-picker)
+
+Interactive color picker component.
+
+## Display Components
+
+### [ink-spinner](https://github.com/vadimdemedes/ink-spinner)
+
+Show loading spinners.
+
+```tsx
+import Spinner from 'ink-spinner';
+
+<Text>
+  <Spinner type="dots" /> Loading...
+</Text>
+```
+
+### [ink-progress-bar](https://github.com/brigand/ink-progress-bar)
+
+Display progress bars.
+
+```tsx
+import ProgressBar from 'ink-progress-bar';
+
+<ProgressBar percent={0.7} />
+```
+
+### [ink-table](https://github.com/maticzav/ink-table)
+
+Render tables with rows and columns.
+
+```tsx
+import Table from 'ink-table';
+
+const data = [
+  {name: 'Alice', age: 30},
+  {name: 'Bob', age: 25}
+];
+
+<Table data={data} />
+```
+
+### [ink-divider](https://github.com/JureSotosek/ink-divider)
+
+Horizontal divider line.
+
+```tsx
+import Divider from 'ink-divider';
+
+<Divider />
+```
+
+### [ink-titled-box](https://github.com/mishieck/ink-titled-box)
+
+Box component with a title.
+
+```tsx
+import TitledBox from 'ink-titled-box';
+
+<TitledBox title="Settings">
+  {/* content */}
+</TitledBox>
+```
+
+## Text Styling
+
+### [ink-link](https://github.com/sindresorhus/ink-link)
+
+Create clickable links in the terminal.
+
+```tsx
+import Link from 'ink-link';
+
+<Link url="https://github.com">Visit GitHub</Link>
+```
+
+### [ink-gradient](https://github.com/sindresorhus/ink-gradient)
+
+Apply gradient colors to text.
+
+```tsx
+import Gradient from 'ink-gradient';
+
+<Gradient name="rainbow">Colorful text</Gradient>
+```
+
+### [ink-big-text](https://github.com/sindresorhus/ink-big-text)
+
+Render large ASCII text.
+
+```tsx
+import BigText from 'ink-big-text';
+
+<BigText text="Hello" font="chrome" />
+```
+
+### [ink-ascii](https://github.com/hexrcs/ink-ascii)
+
+ASCII text with more font choices using Figlet.
+
+### [ink-color-pipe](https://github.com/LitoMore/ink-color-pipe)
+
+Create colored text with simpler style strings.
+
+```tsx
+import ColorPipe from 'ink-color-pipe';
+
+<ColorPipe styles="green.bold">Success!</ColorPipe>
+```
+
+## Content Rendering
+
+### [ink-markdown](https://github.com/cameronhunter/ink-markdown)
+
+Render syntax-highlighted Markdown.
+
+```tsx
+import Markdown from 'ink-markdown';
+
+const markdown = '# Hello\n\nThis is **bold**';
+
+<Markdown>{markdown}</Markdown>
+```
+
+### [ink-syntax-highlight](https://github.com/vsashyn/ink-syntax-highlight)
+
+Syntax highlighting for code.
+
+```tsx
+import SyntaxHighlight from 'ink-syntax-highlight';
+
+<SyntaxHighlight language="javascript" code={code} />
+```
+
+### [ink-picture](https://github.com/endernoke/ink-picture)
+
+Display images in the terminal.
+
+```tsx
+import Picture from 'ink-picture';
+
+<Picture src="./image.png" />
+```
+
+## Layout Components
+
+### [ink-tab](https://github.com/jdeniau/ink-tab)
+
+Tab navigation component.
+
+```tsx
+import {Tab, Tabs} from 'ink-tab';
+
+<Tabs>
+  <Tab name="Overview">Overview content</Tab>
+  <Tab name="Settings">Settings content</Tab>
+</Tabs>
+```
+
+### [ink-scroll-view](https://github.com/ByteLandTechnology/ink-scroll-view)
+
+Scrollable container for content that exceeds terminal height.
+
+### [ink-scroll-list](https://github.com/ByteLandTechnology/ink-scroll-list)
+
+Scrollable list component.
+
+### [ink-virtual-list](https://github.com/archcorsair/ink-virtual-list)
+
+Virtualized list that only renders visible items for better performance with large datasets.
+
+## Data Visualization
+
+### [ink-chart](https://github.com/pppp606/ink-chart)
+
+Sparkline and bar chart components.
+
+```tsx
+import {Sparkline, BarChart} from 'ink-chart';
+
+const data = [1, 5, 3, 7, 2, 9];
+
+<Sparkline data={data} />
+<BarChart data={data} />
+```
+
+## Task Management
+
+### [ink-task-list](https://github.com/privatenumber/ink-task-list)
+
+Display and manage task lists with status indicators.
+
+```tsx
+import TaskList from 'ink-task-list';
+
+const tasks = [
+  {label: 'Build', status: 'success'},
+  {label: 'Test', status: 'loading'},
+  {label: 'Deploy', status: 'pending'}
+];
+
+<TaskList tasks={tasks} />
+```
+
+### [ink-stepper](https://github.com/archcorsair/ink-stepper)
+
+Step-by-step wizard component.
+
+## Process Management
+
+### [ink-spawn](https://github.com/kraenhansen/ink-spawn)
+
+Spawn and manage child processes.
+
+```tsx
+import Spawn from 'ink-spawn';
+
+<Spawn command="npm" args={['install']} />
+```
+
+## Installation
+
+Install any component using npm or yarn:
+
+```bash
+npm install ink-text-input
+npm install ink-spinner
+npm install ink-table
+```
+
+Most components are designed to work seamlessly with Ink and follow similar patterns.
+
+## Usage Pattern
+
+Most Ink components follow this general pattern:
+
+```tsx
+import React, {useState} from 'react';
+import {render, Box} from 'ink';
+import TextInput from 'ink-text-input';
+import Spinner from 'ink-spinner';
+
+function MyApp() {
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <Box flexDirection="column">
+      <TextInput
+        value={query}
+        onChange={setQuery}
+        placeholder="Enter search query..."
+      />
+      {loading && (
+        <Box>
+          <Spinner type="dots" />
+          <Text> Searching...</Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+render(<MyApp />);
+```
+
+## Contributing New Components
+
+If you've built a useful Ink component:
+
+1. Publish it to npm
+2. Add comprehensive documentation
+3. Submit a PR to add it to the [Ink README](https://github.com/vadimdemedes/ink)
+4. Follow the naming convention: `ink-[component-name]`
+
+## Best Practices
+
+- **Check compatibility** - Ensure components work with your Ink version
+- **Read the docs** - Each component may have unique APIs
+- **Keep it simple** - Don't over-complicate your CLI with too many components
+- **Test thoroughly** - Third-party components may behave differently
+- **Consider bundle size** - Some components add significant dependencies
+
+## Next Steps
+
+- Explore [useful hooks](/examples/useful-hooks)
+- Learn to [build your own components](/components/overview)
+- Check out the [official examples](https://github.com/vadimdemedes/ink/tree/master/examples)
+- Join the [Ink community discussions](https://github.com/vadimdemedes/ink/discussions)

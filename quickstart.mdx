@@ -1,80 +1,209 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Build your first Ink CLI app in under 5 minutes
 ---
 
-## Get started in three steps
+Get up and running with Ink in just a few minutes. This guide will walk you through creating your first interactive CLI app.
 
-Get your documentation site running locally and make your first customization.
+## Create Your First App
 
-### Step 1: Set up your local environment
+The fastest way to get started is using `create-ink-app`:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Create a new project">
+    Run the following command to scaffold a new Ink app:
 
-### Step 2: Deploy your changes
+    <CodeGroup>
+    ```bash npm
+    npx create-ink-app my-ink-cli
+    ```
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
+    ```bash yarn
+    yarn create ink-app my-ink-cli
+    ```
+
+    ```bash pnpm
+    pnpm create ink-app my-ink-cli
+    ```
+    </CodeGroup>
+
+    For TypeScript support, add the `--typescript` flag:
+
+    ```bash
+    npx create-ink-app --typescript my-ink-cli
+    ```
+  </Step>
+
+  <Step title="Navigate to your project">
+    ```bash
+    cd my-ink-cli
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Run your app">
+    ```bash
+    npm start
+    ```
+
+    You should see "Hello, Stranger" output in your terminal.
+  </Step>
+</Steps>
+
+## Build a Simple Counter
+
+Let's build a counter that increments every 100ms. Create a file called `counter.tsx`:
+
+```tsx counter.tsx
+import React, {useState, useEffect} from 'react';
+import {render, Text} from 'ink';
+
+const Counter = () => {
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCounter(previousCounter => previousCounter + 1);
+    }, 100);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  return <Text color="green">{counter} tests passed</Text>;
+};
+
+render(<Counter />);
+```
+
+Run it with:
+
+```bash
+npx tsx counter.tsx
+```
+
+### How It Works
+
+<Accordion title="Component Structure">
+  The `Counter` component is a regular React functional component. It uses React hooks like `useState` and `useEffect` just as you would in a browser-based React app.
 </Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
+<Accordion title="State Management">
+  `useState(0)` initializes the counter to 0. The `setCounter` function updates the state, triggering a re-render of the component.
 </Accordion>
 
-## Next steps
+<Accordion title="Side Effects">
+  `useEffect` sets up an interval that increments the counter every 100ms. The cleanup function (returned from `useEffect`) clears the interval when the component unmounts.
+</Accordion>
 
-Now that you have your docs running, explore these key features:
+<Accordion title="Rendering">
+  The `render()` function from Ink renders your React component to the terminal instead of the DOM. The `Text` component displays colored text.
+</Accordion>
+
+## Add User Input
+
+Let's make it interactive by adding keyboard controls:
+
+```tsx interactive.tsx
+import React, {useState} from 'react';
+import {render, Text, Box, useInput} from 'ink';
+
+const directions = {
+  ArrowUp: '↑',
+  ArrowDown: '↓',
+  ArrowLeft: '←',
+  ArrowRight: '→',
+};
+
+const Robot = () => {
+  const [x, setX] = useState(1);
+  const [y, setY] = useState(1);
+
+  useInput((input, key) => {
+    if (key.leftArrow) {
+      setX(Math.max(1, x - 1));
+    }
+
+    if (key.rightArrow) {
+      setX(Math.min(20, x + 1));
+    }
+
+    if (key.upArrow) {
+      setY(Math.max(1, y - 1));
+    }
+
+    if (key.downArrow) {
+      setY(Math.min(10, y + 1));
+    }
+
+    if (input === 'q') {
+      process.exit(0);
+    }
+  });
+
+  return (
+    <Box flexDirection="column">
+      <Text>
+        Use arrow keys to move the robot. Press 'q' to exit.
+      </Text>
+      <Box height={12} borderStyle="single">
+        <Box marginLeft={x} marginTop={y}>
+          <Text>🤖</Text>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+render(<Robot />);
+```
+
+Run it with arrow keys to control the robot:
+
+```bash
+npx tsx interactive.tsx
+```
+
+## Understanding the Code
+
+### Components
+
+Ink provides several built-in components:
+
+- **`<Text>`** - Display text with colors and styling
+- **`<Box>`** - Layout container with Flexbox properties
+- **`<Newline>`** - Insert line breaks
+- **`<Spacer>`** - Flexible spacing
+
+### Hooks
+
+Ink provides React hooks for terminal interactions:
+
+- **`useInput()`** - Handle keyboard input
+- **`useApp()`** - Control app lifecycle (exit, etc.)
+- **`useStdin()`** - Access stdin stream
+- **`useStdout()`** - Access stdout stream
+- **`useFocus()`** - Manage component focus
+
+## Next Steps
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Core Concepts" icon="book" href="/concepts/app-lifecycle">
+    Learn about app lifecycle, layout system, and styling
+  </Card>
+  <Card title="Components" icon="cube" href="/components/overview">
+    Explore all available components and their props
+  </Card>
+  <Card title="Hooks" icon="hook" href="/hooks/overview">
+    Discover all hooks for terminal interaction
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/overview">
+    Browse real-world examples and patterns
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

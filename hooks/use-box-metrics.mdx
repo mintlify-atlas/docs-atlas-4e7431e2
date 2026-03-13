@@ -1,0 +1,264 @@
+---
+title: 'useBoxMetrics'
+description: 'React hook for tracking layout metrics of Box elements in Ink'
+---
+
+`useBoxMetrics` is a React hook that returns the current layout metrics for a tracked box element. It updates when layout changes (for example terminal resize, sibling/content changes, or position changes).
+
+The hook returns `{width: 0, height: 0, left: 0, top: 0}` until the first layout pass completes. It also returns zeros when the tracked ref is detached.
+
+## Usage
+
+```tsx
+import {useRef} from 'react';
+import {Box, Text, useBoxMetrics} from 'ink';
+
+const Example = () => {
+  const ref = useRef(null);
+  const {width, height, left, top, hasMeasured} = useBoxMetrics(ref);
+
+  return (
+    <Box ref={ref}>
+      <Text>
+        {hasMeasured ? `${width}x${height} at ${left},${top}` : 'Measuring...'}
+      </Text>
+    </Box>
+  );
+};
+```
+
+## Parameters
+
+<ParamField path="ref" type="React.RefObject<DOMElement>" required>
+  A ref to the `<Box>` element to track. Create this ref using `useRef(null)`.
+</ParamField>
+
+## Return Value
+
+Returns a `UseBoxMetricsResult` object with the following properties:
+
+<ResponseField name="width" type="number">
+  Element width in character cells.
+</ResponseField>
+
+<ResponseField name="height" type="number">
+  Element height in lines (rows).
+</ResponseField>
+
+<ResponseField name="left" type="number">
+  Distance from the left edge of the parent element in character cells.
+</ResponseField>
+
+<ResponseField name="top" type="number">
+  Distance from the top edge of the parent element in lines.
+</ResponseField>
+
+<ResponseField name="hasMeasured" type="boolean">
+  Whether the currently tracked element has been measured in the latest layout pass. This is `false` until the first layout completes.
+</ResponseField>
+
+## Examples
+
+### Basic Metrics Display
+
+```tsx
+import {useRef} from 'react';
+import {Box, Text, useBoxMetrics} from 'ink';
+
+const Example = () => {
+  const ref = useRef(null);
+  const {width, height, left, top, hasMeasured} = useBoxMetrics(ref);
+
+  return (
+    <Box ref={ref}>
+      <Text>
+        {hasMeasured ? `${width}x${height} at ${left},${top}` : 'Measuring...'}
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Responsive Content Based on Size
+
+```tsx
+import {useRef} from 'react';
+import {Box, Text, useBoxMetrics} from 'ink';
+
+const ResponsiveBox = () => {
+  const ref = useRef(null);
+  const {width, hasMeasured} = useBoxMetrics(ref);
+
+  return (
+    <Box ref={ref} flexDirection="column">
+      {hasMeasured && width < 40 ? (
+        <Text>Narrow layout</Text>
+      ) : (
+        <Text>Wide layout with more information</Text>
+      )}
+    </Box>
+  );
+};
+```
+
+### Track Multiple Boxes
+
+```tsx
+import {useRef} from 'react';
+import {Box, Text, useBoxMetrics} from 'ink';
+
+const MultiBoxTracker = () => {
+  const leftRef = useRef(null);
+  const rightRef = useRef(null);
+  
+  const leftMetrics = useBoxMetrics(leftRef);
+  const rightMetrics = useBoxMetrics(rightRef);
+
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Box ref={leftRef} marginRight={2}>
+          <Text>Left Box</Text>
+        </Box>
+        <Box ref={rightRef}>
+          <Text>Right Box</Text>
+        </Box>
+      </Box>
+      <Box marginTop={1}>
+        <Text>Left: {leftMetrics.width}x{leftMetrics.height}</Text>
+      </Box>
+      <Box>
+        <Text>Right: {rightMetrics.width}x{rightMetrics.height}</Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Tooltip Positioning
+
+```tsx
+import {useRef, useState} from 'react';
+import {Box, Text, useBoxMetrics} from 'ink';
+
+const TooltipExample = () => {
+  const buttonRef = useRef(null);
+  const [showTooltip, setShowTooltip] = useState(true);
+  const {left, top, width, hasMeasured} = useBoxMetrics(buttonRef);
+
+  return (
+    <Box flexDirection="column">
+      <Box ref={buttonRef}>
+        <Text backgroundColor="blue" color="white"> Click me </Text>
+      </Box>
+      {showTooltip && hasMeasured && (
+        <Box
+          position="absolute"
+          left={left}
+          top={top + 1}
+        >
+          <Text backgroundColor="yellow" color="black">
+            This is a tooltip!
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
+};
+```
+
+### Dynamic Layout Adjustments
+
+```tsx
+import {useRef, useEffect, useState} from 'react';
+import {Box, Text, useBoxMetrics} from 'ink';
+
+const DynamicGrid = ({items}) => {
+  const containerRef = useRef(null);
+  const {width, hasMeasured} = useBoxMetrics(containerRef);
+  const [columns, setColumns] = useState(1);
+
+  useEffect(() => {
+    if (hasMeasured) {
+      // Calculate how many columns fit
+      const itemWidth = 20;
+      const cols = Math.floor(width / itemWidth);
+      setColumns(Math.max(1, cols));
+    }
+  }, [width, hasMeasured]);
+
+  return (
+    <Box ref={containerRef} flexDirection="column">
+      <Text>Columns: {columns}</Text>
+      <Box flexWrap="wrap">
+        {items.map((item, i) => (
+          <Box key={i} width={Math.floor(width / columns)}>
+            <Text>{item}</Text>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Measure After Content Changes
+
+```tsx
+import {useRef, useState, useEffect} from 'react';
+import {Box, Text, useBoxMetrics} from 'ink';
+
+const MeasureContent = () => {
+  const ref = useRef(null);
+  const [items, setItems] = useState(['Item 1']);
+  const {height, hasMeasured} = useBoxMetrics(ref);
+
+  useEffect(() => {
+    if (hasMeasured) {
+      // React to height changes
+      console.log(`Height changed to: ${height}`);
+    }
+  }, [height, hasMeasured]);
+
+  return (
+    <Box ref={ref} flexDirection="column">
+      {items.map((item, i) => (
+        <Text key={i}>{item}</Text>
+      ))}
+      <Text dimColor>Height: {height}</Text>
+    </Box>
+  );
+};
+```
+
+## Behavior
+
+<Note>
+  All positions are relative to the element's parent, not to the terminal screen or Ink output origin.
+</Note>
+
+<Note>
+  The hook returns `{width: 0, height: 0, left: 0, top: 0, hasMeasured: false}` until the first layout pass completes. Always check `hasMeasured` before using the metrics.
+</Note>
+
+<Tip>
+  The component automatically re-renders when:
+  - Terminal is resized
+  - Sibling or content changes affect layout
+  - Element position changes
+  - The tracked ref changes
+</Tip>
+
+## Use Cases
+
+- Creating tooltips or popovers positioned relative to other elements
+- Building responsive layouts that adapt based on available space
+- Implementing dynamic grids that adjust column count
+- Measuring content size for scrolling calculations
+- Positioning absolutely positioned elements relative to other elements
+- Detecting when content overflows available space
+
+## Related Hooks
+
+- [useWindowSize](/hooks/use-window-size) - Get terminal dimensions
+- [useRef](https://react.dev/reference/react/useRef) - Create refs to track elements

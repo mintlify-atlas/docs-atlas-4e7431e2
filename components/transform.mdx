@@ -1,0 +1,326 @@
+---
+title: Transform
+description: Transform text output before rendering to terminal
+---
+
+The `<Transform>` component transforms the string representation of React components before they're written to output. Use it to apply gradients, add links, create text effects, or any other string-based transformation.
+
+## When to Use Transform
+
+Use `<Transform>` when you need to:
+
+- Apply gradients to text ([ink-gradient](https://github.com/sindresorhus/ink-gradient))
+- Add clickable links ([ink-link](https://github.com/sindresorhus/ink-link))
+- Create text effects like ASCII art ([ink-big-text](https://github.com/sindresorhus/ink-big-text))
+- Modify text output programmatically (uppercase, lowercase, etc.)
+- Apply transformations that work on strings, not React nodes
+
+## Basic Usage
+
+```tsx
+import {render, Transform, Text} from 'ink';
+
+const App = () => (
+  <Transform transform={output => output.toUpperCase()}>
+    <Text>Hello World</Text>
+  </Transform>
+);
+
+render(<App />);
+// Output: HELLO WORLD
+```
+
+## Props
+
+<ParamField path="transform" type="(children: string, index: number) => string" required>
+  Function that transforms the output string. Receives the rendered children as a string and must return the transformed string.
+  
+  **Parameters:**
+  - `children` - Rendered output of child components as a string
+  - `index` - Zero-indexed line number when output wraps to multiple lines
+  
+  ```tsx
+  <Transform transform={(output) => output.toUpperCase()}>
+    <Text>hello</Text>
+  </Transform>
+  ```
+</ParamField>
+
+<ParamField path="children" type="ReactNode">
+  Child components to transform. Should only contain `<Text>` components.
+</ParamField>
+
+<ParamField path="accessibilityLabel" type="string">
+  Screen-reader-specific text. When set, children are ignored for screen readers.
+</ParamField>
+
+## Important Considerations
+
+<Warning>
+  **ANSI Escape Codes:** When children use `<Text>` styling props (color, bold, etc.), the string passed to `transform` contains ANSI escape codes. Use ANSI-aware methods like [slice-ansi](https://github.com/chalk/slice-ansi) or [strip-ansi](https://github.com/chalk/strip-ansi) if manipulating whitespace.
+</Warning>
+
+<Warning>
+  **Dimensions:** Transformations should not change output dimensions, or the layout will be incorrect.
+</Warning>
+
+<Warning>
+  **Text Only:** Only apply `<Transform>` to `<Text>` children, not `<Box>` or other components.
+</Warning>
+
+## Examples
+
+### Simple Text Transformation
+
+```tsx
+import {Transform, Text} from 'ink';
+
+const UpperCase = ({children}) => (
+  <Transform transform={output => output.toUpperCase()}>
+    {children}
+  </Transform>
+);
+
+const App = () => (
+  <UpperCase>
+    <Text>hello world</Text>
+  </UpperCase>
+);
+// Output: HELLO WORLD
+```
+
+### Line-by-Line Transformation
+
+The `index` parameter helps when text wraps to multiple lines:
+
+```tsx
+import {render, Transform, Text, Box} from 'ink';
+
+const HangingIndent = ({indent = 4, children}) => (
+  <Transform
+    transform={(line, index) =>
+      index === 0 ? line : ' '.repeat(indent) + line
+    }
+  >
+    {children}
+  </Transform>
+);
+
+const App = () => (
+  <Box width={40}>
+    <HangingIndent indent={4}>
+      <Text>
+        This is a long paragraph that will wrap to multiple lines.
+        The first line is not indented but subsequent lines are.
+      </Text>
+    </HangingIndent>
+  </Box>
+);
+
+render(<App />);
+```
+
+Output:
+```
+This is a long paragraph that will
+    wrap to multiple lines. The first
+    line is not indented but
+    subsequent lines are.
+```
+
+### Working with Styled Text
+
+When using styled text, be aware of ANSI codes:
+
+```tsx
+import {Transform, Text} from 'ink';
+import stripAnsi from 'strip-ansi';
+
+const App = () => (
+  <Transform transform={(output) => {
+    // Strip ANSI codes, transform, then re-apply styling if needed
+    const plain = stripAnsi(output);
+    return plain.toUpperCase();
+  }}>
+    <Text color="green" bold>Hello World</Text>
+  </Transform>
+);
+// Output: HELLO WORLD (without color/bold)
+```
+
+<Note>
+  If you need to preserve styling while transforming, avoid stripping ANSI codes. Only strip them if your transformation requires plain text.
+</Note>
+
+### Prefix Each Line
+
+```tsx
+import {Transform, Text} from 'ink';
+
+const PrefixLines = ({prefix, children}) => (
+  <Transform transform={(line, index) => `${prefix} ${line}`}>
+    {children}
+  </Transform>
+);
+
+const App = () => (
+  <PrefixLines prefix="→">
+    <Text>
+      Line 1{"\n"}
+      Line 2{"\n"}
+      Line 3
+    </Text>
+  </PrefixLines>
+);
+```
+
+Output:
+```
+→ Line 1
+→ Line 2
+→ Line 3
+```
+
+### Custom Truncation
+
+```tsx
+import {Transform, Text} from 'ink';
+
+const CustomTruncate = ({maxLength, children}) => (
+  <Transform transform={(output) => {
+    if (output.length <= maxLength) return output;
+    return output.substring(0, maxLength - 1) + '…';
+  }}>
+    {children}
+  </Transform>
+);
+
+const App = () => (
+  <CustomTruncate maxLength={10}>
+    <Text>This is a very long message</Text>
+  </CustomTruncate>
+);
+// Output: This is a…
+```
+
+### Combining Transformations
+
+You can nest `<Transform>` components:
+
+```tsx
+import {Transform, Text} from 'ink';
+
+const App = () => (
+  <Transform transform={output => output.toUpperCase()}>
+    <Transform transform={output => `[${output}]`}>
+      <Text>hello</Text>
+    </Transform>
+  </Transform>
+);
+// Output: [HELLO]
+```
+
+## Use Cases
+
+### Text Centering
+
+```tsx
+import {Transform, Text, Box} from 'ink';
+
+const Center = ({width, children}) => (
+  <Transform transform={(output) => {
+    const padding = Math.max(0, Math.floor((width - output.length) / 2));
+    return ' '.repeat(padding) + output;
+  }}>
+    {children}
+  </Transform>
+);
+
+const App = () => (
+  <Box width={20}>
+    <Center width={20}>
+      <Text>Centered</Text>
+    </Center>
+  </Box>
+);
+```
+
+### Adding Bullets
+
+```tsx
+import {Transform, Text} from 'ink';
+
+const BulletList = ({children}) => (
+  <Transform transform={(line) => `• ${line}`}>
+    {children}
+  </Transform>
+);
+
+const App = () => (
+  <BulletList>
+    <Text>First item{"\n"}Second item{"\n"}Third item</Text>
+  </BulletList>
+);
+```
+
+### Quote Block
+
+```tsx
+import {Transform, Text, Box} from 'ink';
+
+const Quote = ({children}) => (
+  <Box borderLeft borderColor="gray" paddingLeft={2}>
+    <Transform transform={(line) => `${line}`}>
+      <Text dimColor>{children}</Text>
+    </Transform>
+  </Box>
+);
+
+const App = () => (
+  <Quote>
+    This is a quote block{"\n"}
+    with multiple lines{"\n"}
+    of text.
+  </Quote>
+);
+```
+
+## Best Practices
+
+<Check>
+  **Do:** Use for string-based transformations that can't be done with components
+</Check>
+
+<Check>
+  **Do:** Keep transformations simple and focused
+</Check>
+
+<Check>
+  **Do:** Test with styled text to ensure ANSI codes are handled correctly
+</Check>
+
+<Warning>
+  **Don't:** Change the output dimensions (width/height)
+</Warning>
+
+<Warning>
+  **Don't:** Use on non-Text components
+</Warning>
+
+<Warning>
+  **Don't:** Apply complex transformations that could break terminal rendering
+</Warning>
+
+## Related Components
+
+- [Text](/components/text) - The primary component to use with Transform
+- [Box](/components/box) - Layout container (should not be transformed)
+
+## Popular Transform Libraries
+
+- [ink-gradient](https://github.com/sindresorhus/ink-gradient) - Gradient colors
+- [ink-link](https://github.com/sindresorhus/ink-link) - Clickable links
+- [ink-big-text](https://github.com/sindresorhus/ink-big-text) - ASCII art text
+- [chalk](https://github.com/chalk/chalk) - Terminal string styling
+- [strip-ansi](https://github.com/chalk/strip-ansi) - Remove ANSI codes
+- [slice-ansi](https://github.com/chalk/slice-ansi) - Slice strings with ANSI codes

@@ -1,0 +1,261 @@
+---
+title: App Lifecycle
+description: Understanding how Ink applications start, stay alive, and exit
+---
+
+## Overview
+
+An Ink app is a Node.js process that follows the standard event loop lifecycle. Understanding how your app stays alive and when it exits is crucial for building reliable CLI applications.
+
+## How Ink Apps Stay Alive
+
+Ink apps remain active as long as there is work in the Node.js event loop. This includes:
+
+- Active timers (from `setTimeout`, `setInterval`)
+- Pending promises
+- Event listeners (like `useInput` listening on stdin)
+- Open network connections
+- Any other async operations
+
+<Note>
+If your component tree has no async work, the app will render once and exit immediately.
+</Note>
+
+### Example: Counter with Timer
+
+This example stays alive because of the `setInterval` timer:
+
+```tsx
+import React, {useState, useEffect} from 'react';
+import {render, Text} from 'ink';
+
+const Counter = () => {
+	const [counter, setCounter] = useState(0);
+
+	useEffect(() => {
+		const timer = setInterval(() => {
+			setCounter(prevCounter => prevCounter + 1);
+		}, 100);
+
+		return () => {
+			clearInterval(timer);
+		};
+	}, []);
+
+	return <Text color="green">{counter} tests passed</Text>;
+};
+
+render(<Counter />);
+```
+
+The app stays alive because `setInterval` keeps the event loop active. When the component unmounts, the cleanup function clears the interval.
+
+## Exit Mechanisms
+
+There are three primary ways to exit an Ink app:
+
+### 1. Ctrl+C (Default Behavior)
+
+By default, Ink listens for Ctrl+C and exits gracefully:
+
+```tsx
+render(<MyApp />); // exitOnCtrlC is true by default
+```
+
+You can disable this behavior:
+
+```tsx
+render(<MyApp />, {exitOnCtrlC: false});
+```
+
+### 2. Using `exit()` from `useApp`
+
+Call `exit()` from within your component to programmatically exit:
+
+```tsx
+import {useApp, useInput, Text} from 'ink';
+
+const MyApp = () => {
+	const {exit} = useApp();
+
+	useInput((input) => {
+		if (input === 'q') {
+			exit();
+		}
+	});
+
+	return <Text>Press "q" to exit</Text>;
+};
+```
+
+#### Exit with Values
+
+You can pass values or errors to `exit()`:
+
+```tsx
+const MyApp = () => {
+	const {exit} = useApp();
+
+	useEffect(() => {
+		const runTask = async () => {
+			try {
+				const result = await someAsyncTask();
+				exit(result); // Resolves waitUntilExit() with result
+			} catch (error) {
+				exit(error); // Rejects waitUntilExit() with error
+			}
+		};
+
+		void runTask();
+	}, [exit]);
+
+	return <Text>Processing...</Text>;
+};
+```
+
+### 3. Using `unmount()`
+
+Call `unmount()` on the instance returned by `render()`:
+
+```tsx
+const {unmount} = render(<MyApp />);
+
+// Later...
+unmount();
+```
+
+## Waiting for Exit
+
+Use `waitUntilExit()` to run code after the app is unmounted:
+
+```tsx
+const {waitUntilExit} = render(<MyApp />);
+
+await waitUntilExit();
+
+console.log('App exited');
+```
+
+### Handling Exit Values
+
+The promise returned by `waitUntilExit()` settles based on how the app exited:
+
+- `exit()` → resolves with `undefined`
+- `exit(value)` → resolves with `value`
+- `exit(error)` → rejects with `error` (if error is an `Error` instance)
+- `unmount()` → resolves after stdout writes complete
+
+```tsx
+const {waitUntilExit} = render(<MyApp />);
+
+try {
+	const result = await waitUntilExit();
+	console.log('App exited successfully:', result);
+} catch (error) {
+	console.error('App exited with error:', error);
+	process.exit(1);
+}
+```
+
+## Automatic Exit
+
+Ink apps automatically exit when:
+
+1. There's no more work in the event loop
+2. All timers are cleared
+3. All async operations complete
+4. No input listeners remain active
+
+<Warning>
+If you use `useInput`, your app will stay alive waiting for input. Make sure to provide a way to exit (like pressing 'q') or the app will run indefinitely.
+</Warning>
+
+## Cleanup on Exit
+
+Always clean up resources in `useEffect` cleanup functions:
+
+```tsx
+import {useEffect} from 'react';
+import {Text} from 'ink';
+
+const MyApp = () => {
+	useEffect(() => {
+		// Setup
+		const timer = setInterval(() => {
+			// Do something
+		}, 1000);
+
+		// Cleanup
+		return () => {
+			clearInterval(timer);
+		};
+	}, []);
+
+	return <Text>Running...</Text>;
+};
+```
+
+## Complete Example
+
+Here's a complete example with proper lifecycle management:
+
+```tsx
+import React, {useState, useEffect} from 'react';
+import {render, Box, Text, useInput, useApp} from 'ink';
+
+const Robot = () => {
+	const {exit} = useApp();
+	const [x, setX] = useState(1);
+	const [y, setY] = useState(1);
+
+	useInput((input, key) => {
+		if (input === 'q') {
+			exit();
+		}
+
+		if (key.leftArrow) {
+			setX(Math.max(1, x - 1));
+		}
+
+		if (key.rightArrow) {
+			setX(Math.min(20, x + 1));
+		}
+
+		if (key.upArrow) {
+			setY(Math.max(1, y - 1));
+		}
+
+		if (key.downArrow) {
+			setY(Math.min(10, y + 1));
+		}
+	});
+
+	return (
+		<Box flexDirection="column">
+			<Text>Use arrow keys to move the face. Press "q" to exit.</Text>
+			<Box height={12} paddingLeft={x} paddingTop={y}>
+				<Text>^_^</Text>
+			</Box>
+		</Box>
+	);
+};
+
+const {waitUntilExit} = render(<Robot />);
+
+await waitUntilExit();
+console.log('Thanks for playing!');
+```
+
+## Best Practices
+
+<Card title="Always Provide an Exit Path" icon="door-open">
+For apps using `useInput`, always provide a way for users to exit (typically 'q' or Ctrl+C).
+</Card>
+
+<Card title="Clean Up Resources" icon="broom">
+Use `useEffect` cleanup functions to clear timers, close connections, and release resources.
+</Card>
+
+<Card title="Handle Exit Gracefully" icon="check-circle">
+Use `waitUntilExit()` to perform cleanup tasks after the app exits.
+</Card>

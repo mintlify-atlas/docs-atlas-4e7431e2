@@ -1,0 +1,266 @@
+---
+title: React DevTools
+description: Debug Ink applications using React DevTools to inspect component trees, props, and state
+---
+
+Ink supports [React DevTools](https://github.com/facebook/react/tree/master/packages/react-devtools) out of the box, allowing you to debug your CLI applications with the same tools you use for web development.
+
+![React DevTools with Ink](https://raw.githubusercontent.com/vadimdemedes/ink/master/media/devtools.jpg)
+
+## Installation
+
+First, install the optional `react-devtools-core` peer dependency:
+
+```bash
+npm install --save-dev react-devtools-core
+```
+
+This package is listed as an optional peer dependency in Ink's `package.json`:
+
+```json package.json
+{
+  "peerDependencies": {
+    "react-devtools-core": ">=6.1.2"
+  },
+  "peerDependenciesMeta": {
+    "react-devtools-core": {
+      "optional": true
+    }
+  }
+}
+```
+
+## Starting DevTools
+
+### 1. Run Your CLI with DEV Mode
+
+Set the `DEV` environment variable to `true` when running your Ink application:
+
+```bash
+DEV=true my-cli
+```
+
+This tells Ink to connect to the React DevTools server.
+
+### 2. Start React DevTools
+
+In a separate terminal window, start the React DevTools server:
+
+```bash
+npx react-devtools
+```
+
+You can also add this as a script in your `package.json`:
+
+```json package.json
+{
+  "scripts": {
+    "inspect": "react-devtools"
+  }
+}
+```
+
+Then run it with:
+
+```bash
+npm run inspect
+```
+
+## How It Works
+
+When `DEV=true` is set, Ink automatically loads the DevTools integration code located in `src/devtools.ts`:
+
+```typescript src/devtools.ts
+import WebSocket from 'ws';
+import devtools from 'react-devtools-core';
+
+const isDevToolsReachable = async (): Promise<boolean> =>
+  new Promise(resolve => {
+    const socket = new WebSocket('ws://localhost:8097');
+
+    const timeout = setTimeout(() => {
+      socket.terminate();
+      resolve(false);
+    }, 2000);
+    
+    timeout.unref();
+
+    socket.on('open', () => {
+      clearTimeout(timeout);
+      socket.terminate();
+      resolve(true);
+    });
+
+    socket.on('error', () => {
+      clearTimeout(timeout);
+      socket.terminate();
+      resolve(false);
+    });
+  });
+
+if (await isDevToolsReachable()) {
+  devtools.initialize();
+  devtools.connectToDevTools();
+} else {
+  console.warn(
+    'DEV is set to true, but the React DevTools server is not running. Start it with:\n\n$ npx react-devtools\n',
+  );
+}
+```
+
+The integration:
+1. Checks if the DevTools server is running on `ws://localhost:8097`
+2. If available, initializes and connects to it
+3. If not available, displays a helpful warning message
+
+## Using DevTools
+
+Once connected, you can:
+
+<CardGroup cols={2}>
+  <Card title="Inspect Component Tree" icon="sitemap">
+    View the entire React component hierarchy of your CLI application
+  </Card>
+  <Card title="View Props" icon="code">
+    Inspect the props passed to each component in real-time
+  </Card>
+  <Card title="Modify Props" icon="pencil">
+    Change component props on the fly and see results immediately
+  </Card>
+  <Card title="Track State" icon="database">
+    Monitor component state changes as your CLI runs
+  </Card>
+</CardGroup>
+
+## Example: Debugging a Counter
+
+Let's debug a simple counter component:
+
+```jsx Counter.jsx
+import React, {useState, useEffect} from 'react';
+import {render, Text, Box} from 'ink';
+
+const Counter = ({initialCount = 0}) => {
+  const [count, setCount] = useState(initialCount);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCount(c => c + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <Box>
+      <Text color="green">Count: {count}</Text>
+    </Box>
+  );
+};
+
+render(<Counter initialCount={5} />);
+```
+
+Run with DevTools:
+
+```bash
+DEV=true node Counter.jsx
+```
+
+In React DevTools, you can:
+- See the `Counter` component in the tree
+- View the `initialCount` prop (5)
+- Monitor the `count` state updating every second
+- Change `initialCount` to a different value and see it reflected immediately
+
+## Live Prop Editing
+
+One of the most powerful features is the ability to edit props without restarting your CLI:
+
+1. Select a component in the DevTools tree
+2. Find the props in the right panel
+3. Click on a prop value to edit it
+4. Press Enter to apply
+5. See the changes immediately in your running CLI
+
+This is incredibly useful for:
+- Testing different visual states
+- Debugging edge cases
+- Rapid prototyping of UI changes
+
+## Exiting Your Application
+
+<Warning>
+  When using React DevTools, you must manually quit your CLI application using **Ctrl+C** after you're done testing. The DevTools connection keeps the process alive.
+</Warning>
+
+## Troubleshooting
+
+### DevTools Server Not Running
+
+If you see this warning:
+
+```
+DEV is set to true, but the React DevTools server is not running. Start it with:
+
+$ npx react-devtools
+```
+
+Make sure you've started the DevTools server in a separate terminal before running your CLI.
+
+### Port Already in Use
+
+React DevTools uses port 8097 by default. If this port is already in use, you may need to:
+1. Stop the conflicting process
+2. Or specify a different port for React DevTools
+
+### Component Tree Not Showing
+
+If the component tree doesn't appear:
+1. Ensure `react-devtools-core` is installed
+2. Verify the `DEV` environment variable is set to `true`
+3. Check that both your CLI and DevTools are running
+4. Try restarting both the CLI and DevTools
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use DEV mode only during development">
+    Never ship your CLI with `DEV=true` in production. The DevTools connection adds overhead and keeps the process alive unnecessarily.
+  </Accordion>
+  
+  <Accordion title="Add npm scripts for convenience">
+    Create scripts in `package.json` to make debugging easier:
+    
+    ```json
+    {
+      "scripts": {
+        "dev": "DEV=true node cli.js",
+        "inspect": "react-devtools"
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Name your components">
+    Give your components descriptive names to make them easier to find in the DevTools tree:
+    
+    ```jsx
+    const UserProfile = () => { /* ... */ };
+    const SettingsPanel = () => { /* ... */ };
+    ```
+    
+    Instead of:
+    
+    ```jsx
+    const Component1 = () => { /* ... */ };
+    const Component2 = () => { /* ... */ };
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Testing](/concepts/testing) - Learn how to test Ink components
+- [Debugging Techniques](/advanced/react-devtools) - Other debugging approaches for CLIs
+- [React DevTools Documentation](https://react.dev/learn/react-developer-tools) - Official React DevTools guide

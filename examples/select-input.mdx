@@ -1,0 +1,314 @@
+---
+title: Select Input Example
+description: Build an interactive list selector with keyboard navigation
+---
+
+The Select Input example demonstrates how to build an interactive menu or list selector with keyboard navigation and screen reader support.
+
+## What This Example Demonstrates
+
+- Building navigable lists with arrow keys
+- Highlighting selected items
+- Using the `useIsScreenReaderEnabled` hook
+- Providing accessible alternatives for screen readers
+- Managing selection state
+- Visual feedback for user interactions
+
+## The Code
+
+```tsx
+import React, {useState} from 'react';
+import {
+  render,
+  Text,
+  Box,
+  useInput,
+  useIsScreenReaderEnabled,
+} from 'ink';
+
+const items = ['Red', 'Green', 'Blue', 'Yellow', 'Magenta', 'Cyan'];
+
+function SelectInput() {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+
+  useInput((input, key) => {
+    if (key.upArrow) {
+      setSelectedIndex(previousIndex =>
+        previousIndex === 0 ? items.length - 1 : previousIndex - 1,
+      );
+    }
+
+    if (key.downArrow) {
+      setSelectedIndex(previousIndex =>
+        previousIndex === items.length - 1 ? 0 : previousIndex + 1,
+      );
+    }
+
+    if (isScreenReaderEnabled) {
+      const number = Number.parseInt(input, 10);
+      if (!Number.isNaN(number) && number > 0 && number <= items.length) {
+        setSelectedIndex(number - 1);
+      }
+    }
+  });
+
+  return (
+    <Box flexDirection="column" aria-role="list">
+      <Text>Select a color:</Text>
+      {items.map((item, index) => {
+        const isSelected = index === selectedIndex;
+        const label = isSelected ? `> ${item}` : `  ${item}`;
+        const screenReaderLabel = `${index + 1}. ${item}`;
+
+        return (
+          <Box
+            key={item}
+            aria-role="listitem"
+            aria-state={{selected: isSelected}}
+            aria-label={isScreenReaderEnabled ? screenReaderLabel : undefined}
+          >
+            <Text color={isSelected ? 'blue' : undefined}>{label}</Text>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+render(<SelectInput />);
+```
+
+## Running the Example
+
+```bash
+npm run example examples/select-input
+```
+
+Use **Up** and **Down** arrow keys to navigate the list. The selected item is highlighted in blue with a `>` indicator.
+
+For screen reader mode:
+
+```bash
+INK_SCREEN_READER=true npm run example examples/select-input
+```
+
+With screen reader mode, you can also type numbers (1-6) to select items directly.
+
+## How It Works
+
+### Selection State
+
+```tsx
+const [selectedIndex, setSelectedIndex] = useState(0);
+```
+
+We track which item is selected using an index (0-based).
+
+### Arrow Key Navigation
+
+```tsx
+if (key.upArrow) {
+  setSelectedIndex(previousIndex =>
+    previousIndex === 0 ? items.length - 1 : previousIndex - 1,
+  );
+}
+
+if (key.downArrow) {
+  setSelectedIndex(previousIndex =>
+    previousIndex === items.length - 1 ? 0 : previousIndex + 1,
+  );
+}
+```
+
+**Up Arrow:**
+- If at the first item (index 0), wrap to the last item
+- Otherwise, move to the previous item
+
+**Down Arrow:**
+- If at the last item, wrap to the first item
+- Otherwise, move to the next item
+
+This creates a circular navigation pattern.
+
+### Screen Reader Support
+
+```tsx
+const isScreenReaderEnabled = useIsScreenReaderEnabled();
+
+if (isScreenReaderEnabled) {
+  const number = Number.parseInt(input, 10);
+  if (!Number.isNaN(number) && number > 0 && number <= items.length) {
+    setSelectedIndex(number - 1);
+  }
+}
+```
+
+When a screen reader is enabled:
+- Users can type numbers (1-6) to select items directly
+- This provides an alternative to arrow key navigation
+
+### Visual Indicators
+
+```tsx
+const isSelected = index === selectedIndex;
+const label = isSelected ? `> ${item}` : `  ${item}`;
+
+<Text color={isSelected ? 'blue' : undefined}>{label}</Text>
+```
+
+Selected items are indicated with:
+- A `>` prefix
+- Blue text color
+
+### ARIA Attributes
+
+```tsx
+<Box flexDirection="column" aria-role="list">
+  {items.map((item, index) => (
+    <Box
+      key={item}
+      aria-role="listitem"
+      aria-state={{selected: isSelected}}
+      aria-label={isScreenReaderEnabled ? screenReaderLabel : undefined}
+    >
+```
+
+Accessibility attributes help screen readers:
+- `aria-role="list"` - Marks the container as a list
+- `aria-role="listitem"` - Marks each item
+- `aria-state={{selected: true}}` - Indicates the selected item
+- `aria-label` - Provides descriptive labels for screen readers
+
+## Key Concepts
+
+### Wrapping Navigation
+
+The ternary operators create circular navigation:
+
+```tsx
+// Wrap from first to last
+previousIndex === 0 ? items.length - 1 : previousIndex - 1
+
+// Wrap from last to first
+previousIndex === items.length - 1 ? 0 : previousIndex + 1
+```
+
+### Screen Reader Detection
+
+Check if a screen reader is active:
+
+```tsx
+const isScreenReaderEnabled = useIsScreenReaderEnabled();
+```
+
+This is set via the `INK_SCREEN_READER` environment variable or the `isScreenReaderEnabled` option when calling `render()`.
+
+## Enhancements
+
+### Add Selection Confirmation
+
+```tsx
+const [confirmed, setConfirmed] = useState<string | null>(null);
+
+useInput((input, key) => {
+  if (key.return) {
+    setConfirmed(items[selectedIndex]);
+  }
+  // ... rest of input handling
+});
+
+if (confirmed) {
+  return <Text color="green">You selected: {confirmed}</Text>;
+}
+```
+
+### Multi-Select
+
+```tsx
+const [selected, setSelected] = useState<Set<number>>(new Set());
+
+useInput((input, key) => {
+  if (input === ' ') {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(selectedIndex)) {
+        next.delete(selectedIndex);
+      } else {
+        next.add(selectedIndex);
+      }
+      return next;
+    });
+  }
+  // ... arrow key handling
+});
+
+// In render:
+const isChecked = selected.has(index);
+const checkbox = isChecked ? '[✓]' : '[ ]';
+```
+
+### Add Categories
+
+```tsx
+const categories = {
+  Primary: ['Red', 'Green', 'Blue'],
+  Secondary: ['Yellow', 'Magenta', 'Cyan'],
+};
+
+return (
+  <Box flexDirection="column">
+    <Text>Select a color:</Text>
+    {Object.entries(categories).map(([category, items]) => (
+      <Box key={category} flexDirection="column" marginTop={1}>
+        <Text bold>{category}:</Text>
+        {items.map((item, index) => (
+          // ... render items
+        ))}
+      </Box>
+    ))}
+  </Box>
+);
+```
+
+### Add Search/Filter
+
+```tsx
+const [filter, setFilter] = useState('');
+
+const filteredItems = items.filter(item =>
+  item.toLowerCase().includes(filter.toLowerCase())
+);
+
+useInput((input, key) => {
+  if (key.backspace) {
+    setFilter(f => f.slice(0, -1));
+  } else if (!key.upArrow && !key.downArrow && !key.return) {
+    setFilter(f => f + input);
+  }
+  // ... rest of handling
+});
+
+return (
+  <Box flexDirection="column">
+    <Text>Search: {filter}</Text>
+    <Text>Select a color:</Text>
+    {filteredItems.map(/* ... */)}
+  </Box>
+);
+```
+
+## Best Practices
+
+1. **Always provide keyboard navigation** - Arrow keys are standard for lists
+2. **Use visual indicators** - Colors, icons, or prefixes show selection
+3. **Support screen readers** - Use ARIA attributes and provide alternatives
+4. **Handle edge cases** - Wrap navigation at list boundaries
+5. **Provide confirmation** - Let users confirm their selection (Enter key)
+
+## Next Steps
+
+- Check out [ink-select-input](https://github.com/vadimdemedes/ink-select-input) for a full-featured component
+- Learn about [screen reader support](/advanced/screen-reader-support)
+- Read the [`useInput` documentation](/hooks/use-input)
+- Explore [ink-multi-select](https://github.com/karaggeorge/ink-multi-select) for multi-selection

@@ -1,0 +1,97 @@
+---
+title: Components Overview
+description: Core components for building CLI interfaces with Ink
+---
+
+Ink provides a set of essential components for building command-line interfaces using React. These components are similar to HTML elements but designed specifically for terminal rendering.
+
+## Core Components
+
+Ink includes the following built-in components:
+
+- **[Text](/components/text)** - Display and style text output
+- **[Box](/components/box)** - Layout container using Flexbox
+- **[Newline](/components/newline)** - Insert line breaks
+- **[Spacer](/components/spacer)** - Flexible spacing between elements
+- **[Static](/components/static)** - Render permanent output above dynamic content
+- **[Transform](/components/transform)** - Transform text output before rendering
+
+## Component Architecture
+
+All Ink components are built on top of React and follow the same component-based architecture:
+
+```tsx
+import React from 'react';
+import {render, Box, Text} from 'ink';
+
+const App = () => (
+  <Box flexDirection="column" padding={1}>
+    <Text color="green">Hello from Ink!</Text>
+    <Text>Build beautiful CLIs with React</Text>
+  </Box>
+);
+
+render(<App />);
+```
+
+## Layout System
+
+Ink uses [Yoga](https://github.com/facebook/yoga), a Flexbox layout engine, to position elements in the terminal. This means:
+
+- Every element is a Flexbox container by default
+- You can use familiar CSS-like properties (flexDirection, justifyContent, alignItems, etc.)
+- All text must be wrapped in a `<Text>` component
+
+## Key Principles
+
+### 1. Flexbox Everywhere
+
+Think of every component as having `display: flex` in the browser:
+
+```tsx
+<Box>
+  <Text>Left</Text>
+  <Spacer />
+  <Text>Right</Text>
+</Box>
+```
+
+### 2. Text Wrapping
+
+All text content must be inside `<Text>` components:
+
+```tsx
+// ✅ Correct
+<Box>
+  <Text>Hello World</Text>
+</Box>
+
+// ❌ Incorrect
+<Box>
+  Hello World
+</Box>
+```
+
+### 3. Style Properties
+
+Components accept style properties as props:
+
+```tsx
+<Box 
+  padding={2} 
+  margin={1} 
+  borderStyle="round"
+  flexDirection="column"
+>
+  <Text bold color="blue">Styled content</Text>
+</Box>
+```
+
+## Next Steps
+
+Explore the individual component documentation:
+
+- Start with [Text](/components/text) for displaying styled text
+- Learn about [Box](/components/box) for creating layouts
+- Use [Static](/components/static) for permanent output like logs
+- Try [Transform](/components/transform) for advanced text effects

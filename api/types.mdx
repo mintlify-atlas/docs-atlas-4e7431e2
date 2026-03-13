@@ -1,0 +1,459 @@
+---
+title: Types
+description: TypeScript type definitions for Ink
+---
+
+Ink is written in TypeScript and exports comprehensive type definitions for all its APIs.
+
+## Core Types
+
+### RenderOptions
+
+Configuration options for the `render()` function.
+
+```typescript
+type RenderOptions = {
+  stdout?: NodeJS.WriteStream;
+  stdin?: NodeJS.ReadStream;
+  stderr?: NodeJS.WriteStream;
+  debug?: boolean;
+  exitOnCtrlC?: boolean;
+  patchConsole?: boolean;
+  onRender?: (metrics: RenderMetrics) => void;
+  isScreenReaderEnabled?: boolean;
+  maxFps?: number;
+  incrementalRendering?: boolean;
+  concurrent?: boolean;
+  kittyKeyboard?: KittyKeyboardOptions;
+  interactive?: boolean;
+  alternateScreen?: boolean;
+};
+```
+
+### Instance
+
+Return type of the `render()` function.
+
+```typescript
+type Instance = {
+  rerender: (node: ReactNode) => void;
+  unmount: () => void;
+  waitUntilExit: () => Promise<unknown>;
+  waitUntilRenderFlush: () => Promise<void>;
+  cleanup: () => void;
+  clear: () => void;
+};
+```
+
+### RenderToStringOptions
+
+Configuration options for the `renderToString()` function.
+
+```typescript
+type RenderToStringOptions = {
+  columns?: number; // default: 80
+};
+```
+
+## Component Props
+
+### BoxProps
+
+Props for the `<Box>` component.
+
+```typescript
+import {Except} from 'type-fest';
+import {Styles} from './styles';
+
+type BoxProps = Except<Styles, 'textWrap'> & {
+  'aria-label'?: string;
+  'aria-hidden'?: boolean;
+  'aria-role'?: 
+    | 'button'
+    | 'checkbox'
+    | 'combobox'
+    | 'list'
+    | 'listbox'
+    | 'listitem'
+    | 'menu'
+    | 'menuitem'
+    | 'option'
+    | 'progressbar'
+    | 'radio'
+    | 'radiogroup'
+    | 'tab'
+    | 'tablist'
+    | 'table'
+    | 'textbox'
+    | 'timer'
+    | 'toolbar';
+  'aria-state'?: {
+    busy?: boolean;
+    checked?: boolean;
+    disabled?: boolean;
+    expanded?: boolean;
+    multiline?: boolean;
+    multiselectable?: boolean;
+    readonly?: boolean;
+    required?: boolean;
+    selected?: boolean;
+  };
+};
+```
+
+### TextProps
+
+Props for the `<Text>` component.
+
+```typescript
+import {ForegroundColorName} from 'chalk';
+import {LiteralUnion} from 'type-fest';
+import {Styles} from './styles';
+
+type TextProps = {
+  'aria-label'?: string;
+  'aria-hidden'?: boolean;
+  color?: LiteralUnion<ForegroundColorName, string>;
+  backgroundColor?: LiteralUnion<ForegroundColorName, string>;
+  dimColor?: boolean;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+  inverse?: boolean;
+  wrap?: Styles['textWrap'];
+  children?: ReactNode;
+};
+```
+
+### StaticProps
+
+Props for the `<Static>` component.
+
+```typescript
+import {ReactNode} from 'react';
+import {Styles} from './styles';
+
+type StaticProps<T> = {
+  items: T[];
+  style?: Styles;
+  children: (item: T, index: number) => ReactNode;
+};
+```
+
+### TransformProps
+
+Props for the `<Transform>` component.
+
+```typescript
+import {ReactNode} from 'react';
+
+type TransformProps = {
+  accessibilityLabel?: string;
+  transform: (children: string, index: number) => string;
+  children?: ReactNode;
+};
+```
+
+## Styles
+
+The `Styles` type defines all available styling properties for Box components.
+
+```typescript
+import {Boxes, BoxStyle} from 'cli-boxes';
+import {LiteralUnion} from 'type-fest';
+import {ForegroundColorName} from 'ansi-styles';
+
+type Styles = {
+  // Text wrapping
+  textWrap?: 
+    | 'wrap'
+    | 'end'
+    | 'middle'
+    | 'truncate-end'
+    | 'truncate'
+    | 'truncate-middle'
+    | 'truncate-start';
+
+  // Position
+  position?: 'absolute' | 'relative' | 'static';
+  top?: number | string;
+  right?: number | string;
+  bottom?: number | string;
+  left?: number | string;
+
+  // Gap
+  gap?: number;
+  columnGap?: number;
+  rowGap?: number;
+
+  // Margin
+  margin?: number;
+  marginX?: number;
+  marginY?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  marginRight?: number;
+
+  // Padding
+  padding?: number;
+  paddingX?: number;
+  paddingY?: number;
+  paddingTop?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+
+  // Flex
+  flexGrow?: number;
+  flexShrink?: number;
+  flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
+  flexBasis?: number | string;
+  flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
+  alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline';
+  alignSelf?: 'flex-start' | 'center' | 'flex-end' | 'auto' | 'stretch' | 'baseline';
+  alignContent?: 
+    | 'flex-start'
+    | 'flex-end'
+    | 'center'
+    | 'stretch'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly';
+  justifyContent?: 
+    | 'flex-start'
+    | 'flex-end'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly'
+    | 'center';
+
+  // Dimensions
+  width?: number | string;
+  height?: number | string;
+  minWidth?: number | string;
+  minHeight?: number | string;
+  maxWidth?: number | string;
+  maxHeight?: number | string;
+  aspectRatio?: number;
+
+  // Display
+  display?: 'flex' | 'none';
+
+  // Borders
+  borderStyle?: keyof Boxes | BoxStyle;
+  borderTop?: boolean;
+  borderBottom?: boolean;
+  borderLeft?: boolean;
+  borderRight?: boolean;
+  borderColor?: LiteralUnion<ForegroundColorName, string>;
+  borderTopColor?: LiteralUnion<ForegroundColorName, string>;
+  borderBottomColor?: LiteralUnion<ForegroundColorName, string>;
+  borderLeftColor?: LiteralUnion<ForegroundColorName, string>;
+  borderRightColor?: LiteralUnion<ForegroundColorName, string>;
+  borderDimColor?: boolean;
+  borderTopDimColor?: boolean;
+  borderBottomDimColor?: boolean;
+  borderLeftDimColor?: boolean;
+  borderRightDimColor?: boolean;
+
+  // Overflow
+  overflow?: 'visible' | 'hidden';
+  overflowX?: 'visible' | 'hidden';
+  overflowY?: 'visible' | 'hidden';
+
+  // Background
+  backgroundColor?: LiteralUnion<ForegroundColorName, string>;
+};
+```
+
+## Keyboard Input Types
+
+### Key
+
+Key information passed to `useInput` handlers.
+
+```typescript
+type Key = {
+  leftArrow: boolean;
+  rightArrow: boolean;
+  upArrow: boolean;
+  downArrow: boolean;
+  return: boolean;
+  escape: boolean;
+  ctrl: boolean;
+  shift: boolean;
+  tab: boolean;
+  backspace: boolean;
+  delete: boolean;
+  pageDown: boolean;
+  pageUp: boolean;
+  home: boolean;
+  end: boolean;
+  meta: boolean;
+  super?: boolean;       // Requires kitty keyboard protocol
+  hyper?: boolean;       // Requires kitty keyboard protocol
+  capsLock?: boolean;    // Requires kitty keyboard protocol
+  numLock?: boolean;     // Requires kitty keyboard protocol
+  eventType?: 'press' | 'repeat' | 'release'; // Requires kitty keyboard protocol
+};
+```
+
+### KittyKeyboardOptions
+
+Configuration for enhanced keyboard input support.
+
+```typescript
+type KittyKeyboardOptions = {
+  // Configuration options for kitty keyboard protocol
+  // See: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+};
+```
+
+### KittyFlagName
+
+```typescript
+type KittyFlagName = string; // Specific flag names defined in kitty protocol
+```
+
+## DOM Types
+
+### DOMElement
+
+Internal DOM element reference used with refs.
+
+```typescript
+type DOMElement = {
+  yogaNode?: YogaNode;
+  // Internal Ink DOM node structure
+};
+```
+
+## Utility Types
+
+### WindowSize
+
+Terminal window dimensions.
+
+```typescript
+type WindowSize = {
+  columns: number;
+  rows: number;
+};
+```
+
+### CursorPosition
+
+Cursor position in the terminal.
+
+```typescript
+type CursorPosition = {
+  column: number;
+  row: number;
+};
+```
+
+### BoxMetrics
+
+Layout metrics for a Box element.
+
+```typescript
+type BoxMetrics = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+```
+
+### UseBoxMetricsResult
+
+Return type of `useBoxMetrics` hook.
+
+```typescript
+type UseBoxMetricsResult = {
+  hasMeasured: boolean;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+};
+```
+
+## Usage Examples
+
+### Typed Component
+
+```typescript
+import React, {FC} from 'react';
+import {Box, Text, BoxProps} from 'ink';
+
+interface CardProps extends Partial<BoxProps> {
+  title: string;
+  children: React.ReactNode;
+}
+
+const Card: FC<CardProps> = ({title, children, ...boxProps}) => (
+  <Box 
+    flexDirection="column" 
+    borderStyle="round" 
+    padding={1}
+    {...boxProps}
+  >
+    <Text bold>{title}</Text>
+    <Box marginTop={1}>
+      {children}
+    </Box>
+  </Box>
+);
+```
+
+### Generic Static Component
+
+```typescript
+import React from 'react';
+import {Static, Box, Text} from 'ink';
+
+interface Task {
+  id: number;
+  name: string;
+  completed: boolean;
+}
+
+const TaskList: React.FC<{tasks: Task[]}> = ({tasks}) => (
+  <Static<Task> items={tasks}>
+    {(task) => (
+      <Box key={task.id}>
+        <Text color={task.completed ? 'green' : 'yellow'}>
+          {task.completed ? '✓' : '⌛'} {task.name}
+        </Text>
+      </Box>
+    )}
+  </Static>
+);
+```
+
+### Typed Input Handler
+
+```typescript
+import {useInput, Key} from 'ink';
+
+const MyComponent = () => {
+  const handleInput = (input: string, key: Key) => {
+    if (key.upArrow) {
+      // Handle up arrow
+    }
+    if (key.return) {
+      // Handle enter
+    }
+    if (input === 'q') {
+      // Handle 'q' key
+    }
+  };
+
+  useInput(handleInput);
+
+  return <Text>Press any key</Text>;
+};
+```

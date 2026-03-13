@@ -1,0 +1,417 @@
+---
+title: Styling
+description: Colors, borders, backgrounds, and text styling in Ink
+---
+
+## Overview
+
+Ink provides powerful styling capabilities for terminal UIs including colors, text formatting, borders, and backgrounds. All text styling is done through the `<Text>` component, while layout styling uses the `<Box>` component.
+
+## Text Colors
+
+The `<Text>` component supports colors via the `color` prop. Ink uses [chalk](https://github.com/chalk/chalk) under the hood for color support.
+
+### Named Colors
+
+```tsx
+import {Text} from 'ink';
+
+const ColorExample = () => (
+	<>
+		<Text color="green">Green text</Text>
+		<Text color="red">Red text</Text>
+		<Text color="blue">Blue text</Text>
+		<Text color="yellow">Yellow text</Text>
+		<Text color="magenta">Magenta text</Text>
+		<Text color="cyan">Cyan text</Text>
+	</>
+);
+```
+
+### Hex Colors
+
+```tsx
+<Text color="#005cc5">Hex blue</Text>
+<Text color="#FF8800">Hex orange</Text>
+```
+
+### RGB Colors
+
+```tsx
+<Text color="rgb(232, 131, 136)">RGB red</Text>
+<Text color="rgb(0, 255, 0)">RGB green</Text>
+```
+
+## Background Colors
+
+### Text Background
+
+Add background color to text:
+
+```tsx
+<Text backgroundColor="green" color="white">White on green</Text>
+<Text backgroundColor="#005cc5" color="white">White on blue</Text>
+<Text backgroundColor="rgb(232, 131, 136)" color="white">White on red</Text>
+```
+
+### Box Background
+
+The `<Box>` component supports background colors that fill the entire box area:
+
+```tsx
+import {Box, Text} from 'ink';
+
+const BackgroundExample = () => (
+	<Box flexDirection="column" gap={1}>
+		{/* Standard red background */}
+		<Box backgroundColor="red" width={10} height={3} alignSelf="flex-start">
+			<Text>Hello</Text>
+		</Box>
+
+		{/* Hex color background */}
+		<Box backgroundColor="#FF8800" width={10} height={3} alignSelf="flex-start">
+			<Text>Hex</Text>
+		</Box>
+
+		{/* RGB background */}
+		<Box backgroundColor="rgb(0,255,0)" width={10} height={3} alignSelf="flex-start">
+			<Text>RGB</Text>
+		</Box>
+	</Box>
+);
+```
+
+### Background Inheritance
+
+Background colors are inherited by child `<Text>` components unless they specify their own:
+
+```tsx
+<Box backgroundColor="cyan" alignSelf="flex-start">
+	<Text>Inherited </Text>
+	<Text backgroundColor="red">Override </Text>
+	<Text>Back to inherited</Text>
+</Box>
+```
+
+### Backgrounds with Borders and Padding
+
+Backgrounds work seamlessly with borders and padding:
+
+```tsx
+<Box
+	backgroundColor="blue"
+	borderStyle="round"
+	padding={1}
+	alignSelf="flex-start"
+>
+	<Text>Background with border and padding</Text>
+</Box>
+```
+
+## Text Formatting
+
+The `<Text>` component supports various text formatting options:
+
+### Bold
+
+```tsx
+<Text bold>Bold text</Text>
+```
+
+### Italic
+
+```tsx
+<Text italic>Italic text</Text>
+```
+
+### Underline
+
+```tsx
+<Text underline>Underlined text</Text>
+```
+
+### Strikethrough
+
+```tsx
+<Text strikethrough>Strikethrough text</Text>
+```
+
+### Dim Color
+
+Make text less bright:
+
+```tsx
+<Text color="red" dimColor>Dimmed red</Text>
+```
+
+### Inverse
+
+Invert foreground and background colors:
+
+```tsx
+<Text inverse color="yellow">Inversed yellow</Text>
+```
+
+### Combined Formatting
+
+You can combine multiple formatting options:
+
+```tsx
+<Text bold underline color="green">Bold, underlined, green text</Text>
+<Text italic dimColor color="blue">Italic, dimmed blue text</Text>
+```
+
+## Borders
+
+The `<Box>` component supports various border styles:
+
+### Border Styles
+
+```tsx
+import {Box, Text} from 'ink';
+
+const BorderExample = () => (
+	<Box flexDirection="column" padding={2}>
+		<Box>
+			<Box borderStyle="single" marginRight={2}>
+				<Text>single</Text>
+			</Box>
+
+			<Box borderStyle="double" marginRight={2}>
+				<Text>double</Text>
+			</Box>
+
+			<Box borderStyle="round" marginRight={2}>
+				<Text>round</Text>
+			</Box>
+
+			<Box borderStyle="bold">
+				<Text>bold</Text>
+			</Box>
+		</Box>
+
+		<Box marginTop={1}>
+			<Box borderStyle="singleDouble" marginRight={2}>
+				<Text>singleDouble</Text>
+			</Box>
+
+			<Box borderStyle="doubleSingle" marginRight={2}>
+				<Text>doubleSingle</Text>
+			</Box>
+
+			<Box borderStyle="classic">
+				<Text>classic</Text>
+			</Box>
+		</Box>
+	</Box>
+);
+```
+
+### Custom Border Styles
+
+Create custom borders with any characters:
+
+```tsx
+<Box
+	borderStyle={{
+		topLeft: '↘',
+		top: '↓',
+		topRight: '↙',
+		left: '→',
+		bottomLeft: '↗',
+		bottom: '↑',
+		bottomRight: '↖',
+		right: '←'
+	}}
+>
+	<Text>Custom border</Text>
+</Box>
+```
+
+### Border Colors
+
+Apply colors to borders:
+
+```tsx
+{/* All borders */}
+<Box borderStyle="round" borderColor="green">
+	<Text>Green border</Text>
+</Box>
+
+{/* Individual sides */}
+<Box
+	borderStyle="round"
+	borderTopColor="green"
+	borderRightColor="blue"
+	borderBottomColor="red"
+	borderLeftColor="yellow"
+>
+	<Text>Multi-color border</Text>
+</Box>
+```
+
+### Dim Border Colors
+
+Make borders less bright:
+
+```tsx
+{/* All borders dimmed */}
+<Box borderStyle="round" borderDimColor>
+	<Text>Dimmed border</Text>
+</Box>
+
+{/* Individual sides dimmed */}
+<Box
+	borderStyle="round"
+	borderTopDimColor
+	borderBottomDimColor
+>
+	<Text>Top and bottom dimmed</Text>
+</Box>
+```
+
+### Partial Borders
+
+Show or hide specific border sides:
+
+```tsx
+{/* Only top and bottom borders */}
+<Box
+	borderStyle="single"
+	borderTop={true}
+	borderBottom={true}
+	borderLeft={false}
+	borderRight={false}
+>
+	<Text>Top and bottom only</Text>
+</Box>
+```
+
+## Text Wrapping and Truncation
+
+Control how text behaves when it exceeds container width:
+
+### Wrap (Default)
+
+```tsx
+<Box width={7}>
+	<Text>Hello World</Text>
+</Box>
+// Output:
+// Hello
+// World
+```
+
+### Truncate End
+
+```tsx
+<Box width={7}>
+	<Text wrap="truncate">Hello World</Text>
+</Box>
+// Output: Hello…
+```
+
+### Truncate Middle
+
+```tsx
+<Box width={7}>
+	<Text wrap="truncate-middle">Hello World</Text>
+</Box>
+// Output: He…ld
+```
+
+### Truncate Start
+
+```tsx
+<Box width={7}>
+	<Text wrap="truncate-start">Hello World</Text>
+</Box>
+// Output: …World
+```
+
+## Complete Styling Example
+
+Here's a comprehensive example combining multiple styling features:
+
+```tsx
+import {Box, Text} from 'ink';
+
+const StyledApp = () => (
+	<Box flexDirection="column" padding={2}>
+		{/* Header with background */}
+		<Box
+			backgroundColor="blue"
+			padding={1}
+			marginBottom={1}
+			justifyContent="center"
+		>
+			<Text bold color="white">My Styled CLI App</Text>
+		</Box>
+
+		{/* Success message */}
+		<Box
+			borderStyle="round"
+			borderColor="green"
+			padding={1}
+			marginBottom={1}
+		>
+			<Text color="green">✔ Operation completed successfully</Text>
+		</Box>
+
+		{/* Warning message */}
+		<Box
+			borderStyle="round"
+			borderColor="yellow"
+			padding={1}
+			marginBottom={1}
+		>
+			<Text color="yellow">⚠ Warning: Check configuration</Text>
+		</Box>
+
+		{/* Error message */}
+		<Box
+			backgroundColor="red"
+			padding={1}
+			marginBottom={1}
+		>
+			<Text bold color="white">✖ Error: Operation failed</Text>
+		</Box>
+
+		{/* Info panel */}
+		<Box borderStyle="single" padding={1} marginBottom={1}>
+			<Box flexDirection="column">
+				<Text bold underline>System Information</Text>
+				<Text>Status: <Text color="green">Online</Text></Text>
+				<Text>Version: <Text dimColor>1.0.0</Text></Text>
+			</Box>
+		</Box>
+
+		{/* Footer */}
+		<Box justifyContent="center">
+			<Text dimColor italic>Press q to quit</Text>
+		</Box>
+	</Box>
+);
+```
+
+## Best Practices
+
+<Card title="Use Semantic Colors" icon="palette">
+Use green for success, red for errors, yellow for warnings, and blue for information to create intuitive interfaces.
+</Card>
+
+<Card title="Test Color Combinations" icon="eye">
+Ensure sufficient contrast between text and background colors for readability.
+</Card>
+
+<Card title="Don't Overuse Formatting" icon="sparkles">
+Too much bold, italic, or color can make output hard to read. Use formatting sparingly for emphasis.
+</Card>
+
+<Card title="Consider Terminal Themes" icon="paint-brush">
+Remember that users have different terminal themes. Test your app with both light and dark backgrounds.
+</Card>
+
+<Card title="Use dimColor for Secondary Info" icon="circle-half-stroke">
+The `dimColor` prop is perfect for de-emphasizing less important information.
+</Card>

@@ -1,0 +1,358 @@
+---
+title: useStderr
+description: Access the stderr stream and write error output in your CLI application
+---
+
+`useStderr` is a React hook that provides access to the stderr stream and allows you to write error messages and diagnostic output directly to stderr while preserving Ink's output.
+
+## Import
+
+```jsx
+import {useStderr} from 'ink';
+```
+
+## Usage
+
+```jsx
+import {useEffect} from 'react';
+import {useStderr, Text} from 'ink';
+
+const Example = () => {
+  const {write} = useStderr();
+  
+  useEffect(() => {
+    write('Warning: Something might be wrong\n');
+  }, [write]);
+  
+  return <Text>Running...</Text>;
+};
+```
+
+## Return Value
+
+```typescript
+{
+  stderr: NodeJS.WriteStream;
+  write: (data: string) => void;
+}
+```
+
+## Properties
+
+### stderr
+
+<ParamField path="stderr" type="NodeJS.WriteStream">
+  The stderr stream passed to `render()` in `options.stderr`, or `process.stderr` by default. Use this for error messages, warnings, and diagnostic output.
+</ParamField>
+
+### write()
+
+<ParamField path="write" type="function">
+  Write any string to stderr while preserving Ink's output. This is useful for logging errors, warnings, and diagnostic information separately from normal output.
+  
+  **Parameters:**
+  - `data` (string) - The string to write to stderr
+  
+  **Note:** Similar to `<Static>`, but only works with strings, not React components.
+</ParamField>
+
+## Examples
+
+### Error Logging
+
+```jsx
+import {useEffect} from 'react';
+import {useStderr, Text} from 'ink';
+
+const Example = () => {
+  const {write} = useStderr();
+  
+  useEffect(() => {
+    try {
+      riskyOperation();
+    } catch (error) {
+      write(`Error: ${error.message}\n`);
+    }
+  }, [write]);
+  
+  return <Text>Processing...</Text>;
+};
+```
+
+### Warning Messages
+
+```jsx
+import {useEffect} from 'react';
+import {useStderr, Text, Box} from 'ink';
+
+const ConfigLoader = ({config}) => {
+  const {write} = useStderr();
+  
+  useEffect(() => {
+    if (!config.apiKey) {
+      write('Warning: API key not configured\n');
+    }
+    
+    if (config.deprecated) {
+      write('Warning: Using deprecated configuration format\n');
+    }
+  }, [config, write]);
+  
+  return (
+    <Box>
+      <Text>Config loaded</Text>
+    </Box>
+  );
+};
+```
+
+### Diagnostic Output
+
+```jsx
+import {useEffect} from 'react';
+import {useStderr, Text} from 'ink';
+
+const Debugger = ({verbose}) => {
+  const {write} = useStderr();
+  
+  useEffect(() => {
+    if (!verbose) {
+      return;
+    }
+    
+    const timer = setInterval(() => {
+      const memUsage = process.memoryUsage();
+      write(
+        `[DEBUG] Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB\n`
+      );
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [verbose, write]);
+  
+  return <Text>Debug mode: {verbose ? 'ON' : 'OFF'}</Text>;
+};
+```
+
+### Separating Output Streams
+
+```jsx
+import {useEffect} from 'react';
+import {useStdout, useStderr, Text} from 'ink';
+
+const DataProcessor = ({data}) => {
+  const {write: writeOut} = useStdout();
+  const {write: writeErr} = useStderr();
+  
+  useEffect(() => {
+    data.forEach(item => {
+      if (item.valid) {
+        // Valid data goes to stdout
+        writeOut(`Processed: ${item.id}\n`);
+      } else {
+        // Invalid data warnings go to stderr
+        writeErr(`Invalid item: ${item.id}\n`);
+      }
+    });
+  }, [data, writeOut, writeErr]);
+  
+  return <Text>Processing {data.length} items...</Text>;
+};
+```
+
+### Error Handling with Cleanup
+
+```jsx
+import {useState, useEffect} from 'react';
+import {useStderr, useApp, Text} from 'ink';
+
+const AsyncTask = () => {
+  const {write} = useStderr();
+  const {exit} = useApp();
+  const [status, setStatus] = useState('running');
+  
+  useEffect(() => {
+    let cancelled = false;
+    
+    performAsyncTask()
+      .then(() => {
+        if (!cancelled) {
+          setStatus('completed');
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          write(`Error: ${error.message}\n`);
+          write(`Stack: ${error.stack}\n`);
+          exit(error);
+        }
+      });
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [write, exit]);
+  
+  return <Text>Status: {status}</Text>;
+};
+
+async function performAsyncTask() {
+  // Async operation
+}
+```
+
+### Validation Warnings
+
+```jsx
+import {useEffect} from 'react';
+import {useStderr, Text, Box} from 'ink';
+
+const FormValidator = ({fields}) => {
+  const {write} = useStderr();
+  
+  useEffect(() => {
+    const warnings = [];
+    
+    fields.forEach(field => {
+      if (!field.value) {
+        warnings.push(`Field "${field.name}" is empty`);
+      }
+      if (field.value?.length > field.maxLength) {
+        warnings.push(`Field "${field.name}" exceeds max length`);
+      }
+    });
+    
+    if (warnings.length > 0) {
+      write('Validation warnings:\n');
+      warnings.forEach(warning => {
+        write(`  - ${warning}\n`);
+      });
+    }
+  }, [fields, write]);
+  
+  return (
+    <Box flexDirection="column">
+      <Text bold>Form Validation</Text>
+      <Text>
+        {warnings.length} warning{warnings.length !== 1 ? 's' : ''}
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Progress with Error Tracking
+
+```jsx
+import {useState, useEffect} from 'react';
+import {useStderr, Text, Box} from 'ink';
+
+const BatchProcessor = ({items}) => {
+  const {write} = useStderr();
+  const [processed, setProcessed] = useState(0);
+  const [errors, setErrors] = useState(0);
+  
+  useEffect(() => {
+    let current = 0;
+    
+    const timer = setInterval(() => {
+      if (current >= items.length) {
+        clearInterval(timer);
+        return;
+      }
+      
+      try {
+        processItem(items[current]);
+        setProcessed(p => p + 1);
+      } catch (error) {
+        write(`Error processing item ${current}: ${error.message}\n`);
+        setErrors(e => e + 1);
+      }
+      
+      current++;
+    }, 100);
+    
+    return () => clearInterval(timer);
+  }, [items, write]);
+  
+  return (
+    <Box flexDirection="column">
+      <Text>
+        Processed: {processed}/{items.length}
+      </Text>
+      {errors > 0 && (
+        <Text color="red">Errors: {errors}</Text>
+      )}
+    </Box>
+  );
+};
+
+function processItem(item) {
+  // Process item
+}
+```
+
+## When to Use useStderr
+
+Use `useStderr` for:
+
+- **Error messages**: Exceptions, failures, and error conditions
+- **Warnings**: Non-fatal issues that users should know about
+- **Diagnostic output**: Debug logs and verbose information
+- **Validation failures**: Input validation errors
+- **Deprecation notices**: Warnings about deprecated features
+
+Write to **stderr** instead of **stdout** when:
+
+- The output is not the primary result of the program
+- The output is for human consumption (not for piping to other commands)
+- You want error messages to appear even when stdout is redirected
+
+## stdout vs stderr
+
+| Stream | Purpose | Use Cases |
+|--------|---------|----------|
+| stdout | Primary output | Results, data, normal operation |
+| stderr | Errors and diagnostics | Errors, warnings, debug logs |
+
+**Why separate streams matter:**
+
+```bash
+# Redirect successful output to file, see errors in terminal
+your-cli > output.txt
+
+# Redirect errors to file, see normal output in terminal  
+your-cli 2> errors.txt
+
+# Redirect both separately
+your-cli > output.txt 2> errors.txt
+
+# Pipe normal output, still see errors
+your-cli | jq '.data'
+```
+
+When you write errors to stderr, they won't interfere with piped output or file redirection of stdout.
+
+## Stream Properties
+
+Like stdout, stderr has properties you can access:
+
+```jsx
+import {useStderr, Text} from 'ink';
+
+const Example = () => {
+  const {stderr} = useStderr();
+  
+  return (
+    <Text>
+      stderr is a TTY: {stderr.isTTY ? 'yes' : 'no'}
+    </Text>
+  );
+};
+```
+
+## Related
+
+- [useStdout](/hooks/use-stdout) - Access stdout stream
+- [useApp](/hooks/use-app) - Exit with errors using `exit(error)`
+- [Error Handling](/hooks/use-stderr) - Best practices for error handling

@@ -1,0 +1,208 @@
+---
+title: 'useWindowSize'
+description: 'React hook for getting terminal window dimensions in Ink'
+---
+
+`useWindowSize` is a React hook that returns the current terminal window dimensions and re-renders the component whenever the terminal is resized.
+
+## Usage
+
+```tsx
+import {Text, useWindowSize} from 'ink';
+
+const Example = () => {
+  const {columns, rows} = useWindowSize();
+
+  return <Text>{columns}x{rows}</Text>;
+};
+```
+
+## Return Value
+
+Returns a `WindowSize` object with the following properties:
+
+<ResponseField name="columns" type="number">
+  Number of columns (horizontal character cells) in the terminal window.
+</ResponseField>
+
+<ResponseField name="rows" type="number">
+  Number of rows (vertical character cells) in the terminal window.
+</ResponseField>
+
+## Examples
+
+### Display Terminal Size
+
+```tsx
+import React from 'react';
+import {render, Box, Text, useWindowSize} from 'ink';
+
+function TerminalResizeExample() {
+  const {columns, rows} = useWindowSize();
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Text bold color="cyan">
+        Terminal Size
+      </Text>
+      <Text>Columns: {columns}</Text>
+      <Text>Rows: {rows}</Text>
+      <Box marginTop={1}>
+        <Text dimColor>
+          Resize your terminal to see the values update. Press Ctrl+C to exit.
+        </Text>
+      </Box>
+    </Box>
+  );
+}
+
+render(<TerminalResizeExample />, {
+  patchConsole: true,
+  exitOnCtrlC: true,
+});
+```
+
+### Responsive Layout
+
+```tsx
+import {Box, Text, useWindowSize} from 'ink';
+
+const ResponsiveLayout = () => {
+  const {columns} = useWindowSize();
+
+  // Switch to vertical layout on narrow terminals
+  const isNarrow = columns < 80;
+
+  return (
+    <Box flexDirection={isNarrow ? 'column' : 'row'}>
+      <Box marginRight={isNarrow ? 0 : 2}>
+        <Text>Left Panel</Text>
+      </Box>
+      <Box>
+        <Text>Right Panel</Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Full-Width Content
+
+```tsx
+import {Box, Text, useWindowSize} from 'ink';
+
+const FullWidthBar = () => {
+  const {columns} = useWindowSize();
+
+  return (
+    <Box>
+      <Text backgroundColor="blue" color="white">
+        {'='.repeat(columns)}
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Adaptive Content Display
+
+```tsx
+import {useState, useEffect} from 'react';
+import {Box, Text, useWindowSize} from 'ink';
+
+const AdaptiveTable = ({data}) => {
+  const {columns} = useWindowSize();
+  const [visibleColumns, setVisibleColumns] = useState([]);
+
+  useEffect(() => {
+    // Show fewer columns on narrow terminals
+    if (columns < 60) {
+      setVisibleColumns(['name', 'status']);
+    } else if (columns < 100) {
+      setVisibleColumns(['name', 'status', 'date']);
+    } else {
+      setVisibleColumns(['name', 'status', 'date', 'description']);
+    }
+  }, [columns]);
+
+  return (
+    <Box flexDirection="column">
+      {data.map((row, i) => (
+        <Box key={i}>
+          {visibleColumns.map(col => (
+            <Box key={col} marginRight={2}>
+              <Text>{row[col]}</Text>
+            </Box>
+          ))}
+        </Box>
+      ))}
+    </Box>
+  );
+};
+```
+
+### Centered Content
+
+```tsx
+import {Box, Text, useWindowSize} from 'ink';
+
+const CenteredMessage = ({message}) => {
+  const {columns, rows} = useWindowSize();
+  const messageWidth = message.length;
+
+  return (
+    <Box
+      width={columns}
+      height={rows}
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Text>{message}</Text>
+    </Box>
+  );
+};
+```
+
+### Progress Bar with Terminal Width
+
+```tsx
+import {Box, Text, useWindowSize} from 'ink';
+
+const ProgressBar = ({progress}) => {
+  const {columns} = useWindowSize();
+  const barWidth = Math.max(20, columns - 20); // Leave space for labels
+  const filledWidth = Math.round((progress / 100) * barWidth);
+
+  return (
+    <Box>
+      <Text>
+        [{"█".repeat(filledWidth)}{"░".repeat(barWidth - filledWidth)}] {progress}%
+      </Text>
+    </Box>
+  );
+};
+```
+
+## Behavior
+
+<Note>
+  The component will automatically re-render whenever the terminal window is resized. This allows your CLI to adapt to different terminal sizes dynamically.
+</Note>
+
+<Tip>
+  Use `useWindowSize` to create responsive CLI layouts that adapt to different terminal sizes, similar to how web applications respond to different viewport sizes.
+</Tip>
+
+## Use Cases
+
+- Creating responsive layouts that adapt to terminal size
+- Building full-width or full-height components
+- Determining when to show/hide information based on available space
+- Centering content in the terminal
+- Creating adaptive tables that show fewer columns on narrow terminals
+- Building progress bars that scale with terminal width
+
+## Related Hooks
+
+- [useBoxMetrics](/hooks/use-box-metrics) - Get layout metrics for specific Box elements
+- [useStdout](/hooks/use-stdout) - Access the stdout stream

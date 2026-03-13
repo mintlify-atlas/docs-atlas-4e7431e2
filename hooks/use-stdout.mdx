@@ -1,0 +1,315 @@
+---
+title: useStdout
+description: Access the stdout stream and write output directly in your CLI application
+---
+
+`useStdout` is a React hook that provides access to the stdout stream where Ink renders your app and allows you to write directly to stdout while preserving Ink's output.
+
+## Import
+
+```jsx
+import {useStdout} from 'ink';
+```
+
+## Usage
+
+```jsx
+import {useEffect} from 'react';
+import {useStdout, Text} from 'ink';
+
+const Example = () => {
+  const {write} = useStdout();
+  
+  useEffect(() => {
+    write('Hello from outside Ink!\n');
+  }, [write]);
+  
+  return <Text>Hello from Ink</Text>;
+};
+```
+
+## Return Value
+
+```typescript
+{
+  stdout: NodeJS.WriteStream;
+  write: (data: string) => void;
+}
+```
+
+## Properties
+
+### stdout
+
+<ParamField path="stdout" type="NodeJS.WriteStream">
+  The stdout stream passed to `render()` in `options.stdout`, or `process.stdout` by default. You can access properties like `stdout.columns` and `stdout.rows` to get terminal dimensions.
+</ParamField>
+
+### write()
+
+<ParamField path="write" type="function">
+  Write any string to stdout while preserving Ink's output. This is useful when you want to display external information outside of Ink's rendering and ensure there's no conflict between the two.
+  
+  **Parameters:**
+  - `data` (string) - The string to write to stdout
+  
+  **Note:** Similar to `<Static>`, but only works with strings, not React components.
+</ParamField>
+
+## Examples
+
+### Write to Stdout
+
+```jsx
+import {useEffect} from 'react';
+import {useStdout, Text} from 'ink';
+
+const Example = () => {
+  const {write} = useStdout();
+  
+  useEffect(() => {
+    // Write a message above Ink's output
+    write('Starting application...\n');
+  }, [write]);
+  
+  return <Text color="green">App is running</Text>;
+};
+```
+
+### Periodic Output
+
+```jsx
+import {useEffect} from 'react';
+import {useStdout, Text, Box} from 'ink';
+
+const Logger = () => {
+  const {write} = useStdout();
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      write(`[${new Date().toISOString()}] Heartbeat\n`);
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [write]);
+  
+  return (
+    <Box borderStyle="round" padding={1}>
+      <Text>Logger is active</Text>
+    </Box>
+  );
+};
+```
+
+### Terminal Dimensions
+
+```jsx
+import {useStdout, Text, Box} from 'ink';
+
+const TerminalInfo = () => {
+  const {stdout} = useStdout();
+  
+  return (
+    <Box flexDirection="column">
+      <Text bold underline>Terminal dimensions:</Text>
+      <Box marginTop={1}>
+        <Text>
+          Width: <Text bold>{stdout.columns}</Text>
+        </Text>
+      </Box>
+      <Box>
+        <Text>
+          Height: <Text bold>{stdout.rows}</Text>
+        </Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Logging External Events
+
+```jsx
+import {useEffect} from 'react';
+import {useStdout, Text} from 'ink';
+import {EventEmitter} from 'events';
+
+const EventLogger = ({emitter}) => {
+  const {write} = useStdout();
+  
+  useEffect(() => {
+    const handleEvent = (data) => {
+      // Log events outside of Ink's rendering
+      write(`Event: ${JSON.stringify(data)}\n`);
+    };
+    
+    emitter.on('event', handleEvent);
+    
+    return () => {
+      emitter.off('event', handleEvent);
+    };
+  }, [emitter, write]);
+  
+  return <Text>Listening for events...</Text>;
+};
+```
+
+### Progress with External Output
+
+```jsx
+import {useState, useEffect} from 'react';
+import {useStdout, Text, Box} from 'ink';
+
+const TaskRunner = ({tasks}) => {
+  const {write} = useStdout();
+  const [current, setCurrent] = useState(0);
+  
+  useEffect(() => {
+    if (current >= tasks.length) {
+      return;
+    }
+    
+    const task = tasks[current];
+    
+    // Write task start to stdout
+    write(`Starting: ${task}\n`);
+    
+    const timer = setTimeout(() => {
+      write(`Completed: ${task}\n`);
+      setCurrent(c => c + 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [current, tasks, write]);
+  
+  return (
+    <Box>
+      <Text>
+        Progress: {current}/{tasks.length}
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Responsive Layout Based on Size
+
+```jsx
+import {useStdout, Text, Box} from 'ink';
+
+const ResponsiveLayout = () => {
+  const {stdout} = useStdout();
+  const isNarrow = stdout.columns < 80;
+  
+  return (
+    <Box 
+      flexDirection={isNarrow ? 'column' : 'row'}
+      gap={1}
+    >
+      <Box borderStyle="single" padding={1}>
+        <Text>Panel 1</Text>
+      </Box>
+      <Box borderStyle="single" padding={1}>
+        <Text>Panel 2</Text>
+      </Box>
+    </Box>
+  );
+};
+```
+
+### Stream Properties
+
+```jsx
+import {useStdout, Text, Box} from 'ink';
+
+const StreamInfo = () => {
+  const {stdout} = useStdout();
+  
+  return (
+    <Box flexDirection="column" gap={1}>
+      <Text bold>Stdout Information:</Text>
+      <Text>Columns: {stdout.columns}</Text>
+      <Text>Rows: {stdout.rows}</Text>
+      <Text>Is TTY: {stdout.isTTY ? 'yes' : 'no'}</Text>
+      <Text>
+        Color support: {stdout.hasColors?.() ? 'yes' : 'no'}
+      </Text>
+    </Box>
+  );
+};
+```
+
+## When to Use useStdout
+
+Use `useStdout` when you need to:
+
+- **Write raw output**: Display text outside of Ink's React rendering
+- **Log events**: Write logs that appear above Ink's UI
+- **Access terminal size**: Get dimensions for responsive layouts
+- **Check TTY status**: Determine if running in an interactive terminal
+- **Stream properties**: Access other stdout properties and methods
+
+## write() vs Components
+
+There are two ways to display output in Ink:
+
+| Method | Use Case |
+|--------|----------|
+| `write()` | Static output, logs, external events |
+| Components (`<Text>`, `<Box>`) | Interactive UI, dynamic updates |
+
+**write()** output:
+- Appears above Ink's rendered UI
+- Cannot be updated after writing
+- Doesn't participate in React rendering
+- Good for logs and completed items
+
+**Component** output:
+- Part of Ink's reactive UI
+- Updates when state/props change
+- Fully interactive
+- Good for live status and controls
+
+For displaying lists of completed items that don't change, consider using the [`<Static>` component](/components/static) instead of `write()`.
+
+## Terminal Resize
+
+The `stdout` object's `columns` and `rows` properties reflect the current terminal size. However, they won't automatically trigger re-renders when the terminal is resized.
+
+To respond to resize events, use the `useWindowSize` hook (if available) or listen to the `resize` event:
+
+```jsx
+import {useEffect, useState} from 'react';
+import {useStdout, Text} from 'ink';
+
+const Example = () => {
+  const {stdout} = useStdout();
+  const [size, setSize] = useState({
+    columns: stdout.columns,
+    rows: stdout.rows
+  });
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setSize({
+        columns: stdout.columns,
+        rows: stdout.rows
+      });
+    };
+    
+    stdout.on('resize', handleResize);
+    
+    return () => {
+      stdout.off('resize', handleResize);
+    };
+  }, [stdout]);
+  
+  return <Text>{size.columns} x {size.rows}</Text>;
+};
+```
+
+## Related
+
+- [useStderr](/hooks/use-stderr) - Access stderr stream
+- [useStdin](/hooks/use-stdin) - Access stdin stream
+- [Static component](/components/static) - Render static output with React components

@@ -1,0 +1,89 @@
+---
+title: "Introduction"
+description: "React for interactive command-line apps"
+---
+
+<img
+  className="block"
+  src="https://media.brand.dev/a11f3324-d126-4d5b-8e06-e52f125af465.svg"
+  alt="Ink Logo"
+  style={{ width: '240px', margin: '0 auto 2rem' }}
+/>
+
+Ink provides the same component-based UI building experience that React offers in the browser, but for command-line apps. It uses [Yoga](https://github.com/facebook/yoga) to build Flexbox layouts in the terminal, so most CSS-like properties are available in Ink as well.
+
+If you are already familiar with React, you already know Ink.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="React Components" icon="react" iconType="duotone">
+    Build your CLI using familiar React components and hooks
+  </Card>
+  <Card title="Flexbox Layouts" icon="grid-2" iconType="duotone">
+    Use CSS-like Flexbox properties powered by Yoga layout engine
+  </Card>
+  <Card title="Rich Styling" icon="palette" iconType="duotone">
+    Colors, borders, backgrounds, and text styling out of the box
+  </Card>
+  <Card title="TypeScript Support" icon="code" iconType="duotone">
+    Full TypeScript support with comprehensive type definitions
+  </Card>
+</CardGroup>
+
+## Quick Example
+
+Here's a simple counter app built with Ink:
+
+```jsx counter.tsx
+import React, {useState, useEffect} from 'react';
+import {render, Text} from 'ink';
+
+const Counter = () => {
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCounter(previousCounter => previousCounter + 1);
+    }, 100);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  return <Text color="green">{counter} tests passed</Text>;
+};
+
+render(<Counter />);
+```
+
+## Who Uses Ink?
+
+Ink powers CLI tools for some of the world's leading companies and projects:
+
+- **[Claude Code](https://github.com/anthropics/claude-code)** - Anthropic's agentic coding tool
+- **[GitHub Copilot CLI](https://github.com/features/copilot/cli)** - GitHub's AI-powered CLI assistant
+- **[Cloudflare Wrangler](https://github.com/cloudflare/wrangler2)** - CLI for Cloudflare Workers
+- **[Gatsby](https://www.gatsbyjs.org)** - Modern web framework
+- **[Prisma](https://www.prisma.io)** - Next-generation ORM
+- **[Shopify CLI](https://github.com/Shopify/cli)** - Build apps and themes for Shopify
+
+...and [hundreds more](https://github.com/vadimdemedes/ink#whos-using-ink).
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install Ink and set up your development environment
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build your first Ink app in under 5 minutes
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/concepts/app-lifecycle">
+    Learn how Ink apps work and how to build them
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/overview">
+    Explore real-world examples and patterns
+  </Card>
+</CardGroup>

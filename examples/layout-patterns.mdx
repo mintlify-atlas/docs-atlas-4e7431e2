@@ -1,0 +1,477 @@
+---
+title: Layout Patterns
+description: Learn common Flexbox layout patterns for Ink components
+---
+
+Ink uses [Yoga](https://github.com/facebook/yoga), a Flexbox layout engine, to position components. Every `<Box>` in Ink is a Flexbox container, similar to having `display: flex` on every `<div>` in CSS.
+
+## Justify Content
+
+The `justifyContent` prop controls how items are distributed along the main axis.
+
+```tsx
+import React from 'react';
+import {render, Box, Text} from 'ink';
+
+function JustifyContent() {
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Text>[</Text>
+        <Box justifyContent="flex-start" width={20} height={1}>
+          <Text>X</Text>
+          <Text>Y</Text>
+        </Box>
+        <Text>] flex-start</Text>
+      </Box>
+      <Box>
+        <Text>[</Text>
+        <Box justifyContent="flex-end" width={20} height={1}>
+          <Text>X</Text>
+          <Text>Y</Text>
+        </Box>
+        <Text>] flex-end</Text>
+      </Box>
+      <Box>
+        <Text>[</Text>
+        <Box justifyContent="center" width={20} height={1}>
+          <Text>X</Text>
+          <Text>Y</Text>
+        </Box>
+        <Text>] center</Text>
+      </Box>
+      <Box>
+        <Text>[</Text>
+        <Box justifyContent="space-around" width={20} height={1}>
+          <Text>X</Text>
+          <Text>Y</Text>
+        </Box>
+        <Text>] space-around</Text>
+      </Box>
+      <Box>
+        <Text>[</Text>
+        <Box justifyContent="space-between" width={20} height={1}>
+          <Text>X</Text>
+          <Text>Y</Text>
+        </Box>
+        <Text>] space-between</Text>
+      </Box>
+      <Box>
+        <Text>[</Text>
+        <Box justifyContent="space-evenly" width={20} height={1}>
+          <Text>X</Text>
+          <Text>Y</Text>
+        </Box>
+        <Text>] space-evenly</Text>
+      </Box>
+    </Box>
+  );
+}
+
+render(<JustifyContent />);
+```
+
+## Running the Example
+
+```bash
+npm run example examples/justify-content
+```
+
+## Common Layout Patterns
+
+### Header with Title and Action
+
+```tsx
+<Box width="100%">
+  <Text bold>My Application</Text>
+  <Spacer />
+  <Text dimColor>Press 'q' to quit</Text>
+</Box>
+```
+
+The `<Spacer>` component fills all available space, pushing items to opposite ends.
+
+### Centered Content
+
+```tsx
+<Box
+  width="100%"
+  height={10}
+  justifyContent="center"
+  alignItems="center"
+>
+  <Text>Centered content</Text>
+</Box>
+```
+
+### Sidebar Layout
+
+```tsx
+<Box width="100%" height="100%">
+  {/* Sidebar */}
+  <Box
+    width={20}
+    flexDirection="column"
+    borderStyle="single"
+    borderRight={true}
+    borderTop={false}
+    borderBottom={false}
+    borderLeft={false}
+  >
+    <Text bold>Menu</Text>
+    <Text>Option 1</Text>
+    <Text>Option 2</Text>
+    <Text>Option 3</Text>
+  </Box>
+
+  {/* Main content */}
+  <Box flexGrow={1} padding={1}>
+    <Text>Main content area</Text>
+  </Box>
+</Box>
+```
+
+### Three Column Layout
+
+```tsx
+<Box width="100%">
+  <Box flexBasis="33%" borderStyle="single">
+    <Text>Column 1</Text>
+  </Box>
+  <Box flexBasis="33%" borderStyle="single">
+    <Text>Column 2</Text>
+  </Box>
+  <Box flexBasis="33%" borderStyle="single">
+    <Text>Column 3</Text>
+  </Box>
+</Box>
+```
+
+### Vertical Stack
+
+```tsx
+<Box flexDirection="column" gap={1}>
+  <Box borderStyle="round" padding={1}>
+    <Text>Item 1</Text>
+  </Box>
+  <Box borderStyle="round" padding={1}>
+    <Text>Item 2</Text>
+  </Box>
+  <Box borderStyle="round" padding={1}>
+    <Text>Item 3</Text>
+  </Box>
+</Box>
+```
+
+### Grid Layout
+
+```tsx
+<Box width={40} flexWrap="wrap" gap={1}>
+  {items.map((item, i) => (
+    <Box key={i} width={18} borderStyle="single" padding={1}>
+      <Text>{item}</Text>
+    </Box>
+  ))}
+</Box>
+```
+
+Use `flexWrap="wrap"` to create a grid that wraps to the next row.
+
+### Header/Content/Footer
+
+```tsx
+<Box flexDirection="column" height="100%">
+  {/* Header */}
+  <Box
+    borderStyle="single"
+    borderBottom={true}
+    borderTop={false}
+    borderLeft={false}
+    borderRight={false}
+    paddingX={1}
+  >
+    <Text bold>Header</Text>
+  </Box>
+
+  {/* Content */}
+  <Box flexGrow={1} padding={1}>
+    <Text>Main content</Text>
+  </Box>
+
+  {/* Footer */}
+  <Box
+    borderStyle="single"
+    borderTop={true}
+    borderBottom={false}
+    borderLeft={false}
+    borderRight={false}
+    paddingX={1}
+  >
+    <Text dimColor>Footer</Text>
+  </Box>
+</Box>
+```
+
+### Card Grid
+
+```tsx
+function CardGrid({items}) {
+  return (
+    <Box flexDirection="column" gap={1}>
+      {items.reduce((rows, item, i) => {
+        const rowIndex = Math.floor(i / 3);
+        if (!rows[rowIndex]) rows[rowIndex] = [];
+        rows[rowIndex].push(item);
+        return rows;
+      }, []).map((row, i) => (
+        <Box key={i} gap={1}>
+          {row.map((item, j) => (
+            <Box
+              key={j}
+              flexBasis="33%"
+              borderStyle="round"
+              padding={1}
+            >
+              <Text>{item}</Text>
+            </Box>
+          ))}
+        </Box>
+      ))}
+    </Box>
+  );
+}
+```
+
+## Flexbox Properties
+
+### Flex Direction
+
+Controls the main axis direction:
+
+```tsx
+// Horizontal (default)
+<Box flexDirection="row">
+  <Text>A</Text>
+  <Text>B</Text>
+</Box>
+// A B
+
+// Vertical
+<Box flexDirection="column">
+  <Text>A</Text>
+  <Text>B</Text>
+</Box>
+// A
+// B
+
+// Reverse
+<Box flexDirection="row-reverse">
+  <Text>A</Text>
+  <Text>B</Text>
+</Box>
+// B A
+
+<Box flexDirection="column-reverse">
+  <Text>A</Text>
+  <Text>B</Text>
+</Box>
+// B
+// A
+```
+
+### Align Items
+
+Controls cross-axis alignment:
+
+```tsx
+// Top aligned (default for row)
+<Box alignItems="flex-start" height={5}>
+  <Text>X</Text>
+  <Text>Y</Text>
+</Box>
+
+// Center aligned
+<Box alignItems="center" height={5}>
+  <Text>X</Text>
+  <Text>Y</Text>
+</Box>
+
+// Bottom aligned
+<Box alignItems="flex-end" height={5}>
+  <Text>X</Text>
+  <Text>Y</Text>
+</Box>
+
+// Stretched
+<Box alignItems="stretch" height={5}>
+  <Box borderStyle="single"><Text>X</Text></Box>
+  <Box borderStyle="single"><Text>Y</Text></Box>
+</Box>
+```
+
+### Flex Grow
+
+Controls how items expand to fill available space:
+
+```tsx
+<Box width={50}>
+  <Text>Label:</Text>
+  <Box flexGrow={1}>
+    <Text>This takes remaining space</Text>
+  </Box>
+</Box>
+```
+
+### Flex Shrink
+
+Controls how items shrink when space is limited:
+
+```tsx
+<Box width={20}>
+  <Box flexShrink={2} width={10}>
+    <Text>Shrinks 2x</Text>
+  </Box>
+  <Box width={10}>
+    <Text>Shrinks 1x</Text>
+  </Box>
+</Box>
+```
+
+### Flex Basis
+
+Sets initial size before growing or shrinking:
+
+```tsx
+<Box width={60}>
+  <Box flexBasis={20}>
+    <Text>20 chars wide</Text>
+  </Box>
+  <Box flexBasis="50%"}>
+    <Text>50% of parent</Text>
+  </Box>
+</Box>
+```
+
+## Gap Properties
+
+### Gap (Column and Row)
+
+```tsx
+<Box gap={2} width={10} flexWrap="wrap">
+  <Text>A</Text>
+  <Text>B</Text>
+  <Text>C</Text>
+</Box>
+// A  B
+//
+// C
+```
+
+### Column Gap
+
+```tsx
+<Box columnGap={2}>
+  <Text>A</Text>
+  <Text>B</Text>
+</Box>
+// A  B
+```
+
+### Row Gap
+
+```tsx
+<Box flexDirection="column" rowGap={1}>
+  <Text>A</Text>
+  <Text>B</Text>
+</Box>
+// A
+//
+// B
+```
+
+## Padding and Margin
+
+```tsx
+// All sides
+<Box padding={2} margin={1}>
+
+// Individual sides
+<Box
+  paddingTop={1}
+  paddingRight={2}
+  paddingBottom={1}
+  paddingLeft={2}
+  marginTop={1}
+  marginBottom={1}
+>
+
+// Horizontal and vertical
+<Box paddingX={2} paddingY={1} marginX={1} marginY={0}>
+```
+
+## Positioning
+
+### Relative Positioning
+
+```tsx
+<Box position="relative" top={2} left={4}>
+  <Text>Offset from normal position</Text>
+</Box>
+```
+
+### Absolute Positioning
+
+```tsx
+<Box height={10} width={40}>
+  <Box position="absolute" top={0} right={0}>
+    <Text>Top right corner</Text>
+  </Box>
+  <Box position="absolute" bottom={0} left={0}>
+    <Text>Bottom left corner</Text>
+  </Box>
+</Box>
+```
+
+## Responsive Width
+
+Use the `useWindowSize` hook for responsive layouts:
+
+```tsx
+import {useWindowSize} from 'ink';
+
+function ResponsiveLayout() {
+  const {width} = useWindowSize();
+  const columns = width > 80 ? 3 : width > 40 ? 2 : 1;
+
+  return (
+    <Box flexWrap="wrap" width={width}>
+      {items.map((item, i) => (
+        <Box
+          key={i}
+          width={Math.floor(width / columns)}
+          borderStyle="single"
+        >
+          <Text>{item}</Text>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+```
+
+## Best Practices
+
+1. **Use `<Spacer>`** - Simplest way to push items apart
+2. **Set explicit heights** - When using vertical centering
+3. **Use `flexGrow`** - For flexible layouts
+4. **Use `gap`** - Instead of margins for consistent spacing
+5. **Test at different sizes** - Terminal windows vary
+6. **Avoid fixed widths** - Use percentages or `flexBasis` when possible
+7. **Use `alignSelf`** - Override alignment for individual items
+
+## Next Steps
+
+- Read the [`<Box>` component documentation](/components/box)
+- Learn about the [`<Spacer>` component](/components/spacer)
+- Explore the [`useWindowSize` hook](/hooks/use-window-size)
+- Check out real examples in the [examples directory](https://github.com/vadimdemedes/ink/tree/master/examples)

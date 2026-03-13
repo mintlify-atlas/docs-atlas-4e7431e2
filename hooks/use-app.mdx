@@ -1,0 +1,270 @@
+---
+title: useApp
+description: Access app lifecycle methods to control your CLI application
+---
+
+`useApp` is a React hook that returns methods for controlling your Ink application's lifecycle, including exiting the app and waiting for render completion.
+
+## Import
+
+```jsx
+import {useApp} from 'ink';
+```
+
+## Usage
+
+```jsx
+import {useEffect} from 'react';
+import {useApp, Text} from 'ink';
+
+const Example = () => {
+  const {exit} = useApp();
+  
+  useEffect(() => {
+    // Exit after 3 seconds
+    const timer = setTimeout(() => {
+      exit();
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [exit]);
+  
+  return <Text>Exiting in 3 seconds...</Text>;
+};
+```
+
+## Return Value
+
+```typescript
+{
+  exit: (errorOrResult?: Error | unknown) => void;
+  waitUntilRenderFlush: () => Promise<void>;
+}
+```
+
+## Methods
+
+### exit()
+
+<ParamField path="exit" type="function">
+  Exit (unmount) the whole Ink app.
+  
+  **Parameters:**
+  - `errorOrResult` (Error | unknown) - Optional value that controls how `waitUntilExit()` settles:
+    - `exit()` - Resolves with `undefined`
+    - `exit(new Error('...'))` - Rejects with the error
+    - `exit(value)` - Resolves with `value`
+</ParamField>
+
+### waitUntilRenderFlush()
+
+<ParamField path="waitUntilRenderFlush" type="function">
+  Returns a promise that settles after pending render output is flushed to stdout.
+  
+  **Returns:** `Promise<void>`
+</ParamField>
+
+## Examples
+
+### Exit on User Input
+
+```jsx
+import {useInput, useApp, Text} from 'ink';
+
+const Example = () => {
+  const {exit} = useApp();
+  
+  useInput((input) => {
+    if (input === 'q') {
+      exit();
+    }
+  });
+  
+  return <Text>Press 'q' to exit</Text>;
+};
+```
+
+### Exit with Result
+
+```jsx
+import {useState, useEffect} from 'react';
+import {useApp, Text} from 'ink';
+
+const DataFetcher = () => {
+  const {exit} = useApp();
+  const [data, setData] = useState(null);
+  
+  useEffect(() => {
+    fetch('https://api.example.com/data')
+      .then(res => res.json())
+      .then(data => {
+        setData(data);
+        // Exit with the fetched data
+        exit(data);
+      })
+      .catch(error => {
+        // Exit with error
+        exit(error);
+      });
+  }, [exit]);
+  
+  return <Text>Fetching data...</Text>;
+};
+
+// In your main file:
+const {waitUntilExit} = render(<DataFetcher />);
+
+try {
+  const result = await waitUntilExit();
+  console.log('Data:', result);
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+### Exit After Task Completion
+
+```jsx
+import {useState, useEffect} from 'react';
+import {useApp, Text, Box} from 'ink';
+
+const TaskRunner = ({tasks}) => {
+  const {exit} = useApp();
+  const [current, setCurrent] = useState(0);
+  
+  useEffect(() => {
+    if (current >= tasks.length) {
+      exit();
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      setCurrent(c => c + 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [current, tasks.length, exit]);
+  
+  return (
+    <Box flexDirection="column">
+      <Text>Running tasks... {current}/{tasks.length}</Text>
+      {current < tasks.length && (
+        <Text color="cyan">{tasks[current]}</Text>
+      )}
+    </Box>
+  );
+};
+```
+
+### Wait for Render Flush
+
+```jsx
+import {useEffect} from 'react';
+import {useApp, Text} from 'ink';
+
+const Example = () => {
+  const {waitUntilRenderFlush, exit} = useApp();
+  
+  useEffect(() => {
+    (async () => {
+      // Wait for the component to render
+      await waitUntilRenderFlush();
+      
+      // Now we can safely run commands that depend on the render
+      console.log('Component rendered!');
+      
+      // Do some work
+      await doSomeAsyncWork();
+      
+      // Exit when done
+      exit();
+    })();
+  }, [waitUntilRenderFlush, exit]);
+  
+  return <Text>Processing...</Text>;
+};
+```
+
+### Graceful Shutdown
+
+```jsx
+import {useEffect} from 'react';
+import {useApp, useInput, Text} from 'ink';
+
+const Example = () => {
+  const {exit} = useApp();
+  
+  useInput((input, key) => {
+    if (input === 'q' || (input === 'c' && key.ctrl)) {
+      // Cleanup before exit
+      cleanup();
+      exit();
+    }
+  });
+  
+  useEffect(() => {
+    // Setup
+    const resource = setup();
+    
+    return () => {
+      // Cleanup when component unmounts
+      resource.close();
+    };
+  }, []);
+  
+  return <Text>Press 'q' or Ctrl+C to exit</Text>;
+};
+
+function setup() {
+  // Initialize resources
+  return { close: () => {} };
+}
+
+function cleanup() {
+  // Clean up resources
+  console.log('Cleaning up...');
+}
+```
+
+## App Lifecycle
+
+An Ink app remains alive as long as there's active work in the event loop (timers, promises, `useInput` listening, etc.). The app can be exited in three ways:
+
+1. **User termination**: Press Ctrl+C (enabled by default via `exitOnCtrlC` option)
+2. **Programmatic exit**: Call `exit()` from `useApp` inside a component
+3. **External unmount**: Call `unmount()` on the object returned by `render()`
+
+When there's no async work remaining, the app will render once and exit immediately.
+
+## Waiting for Exit
+
+Use `waitUntilExit()` from the `render()` return value to run code after the app exits:
+
+```jsx
+import {render} from 'ink';
+
+const {waitUntilExit} = render(<MyApp />);
+
+await waitUntilExit();
+
+console.log('App has exited');
+```
+
+The promise returned by `waitUntilExit()` settles based on how `exit()` was called:
+
+```jsx
+// Resolves with undefined
+exit();
+
+// Rejects with error
+exit(new Error('Something went wrong'));
+
+// Resolves with value
+exit({success: true, data: [...]});
+```
+
+## Related
+
+- [render()](/api/render) - Render an Ink app
+- [useInput](/hooks/use-input) - Handle user input
+- [App Lifecycle](/concepts/app-lifecycle) - Learn about Ink's app lifecycle

@@ -1,0 +1,383 @@
+---
+title: User Input
+description: Handling keyboard input and user interactions in Ink applications
+---
+
+## Overview
+
+Ink provides powerful hooks for handling user input, enabling you to build interactive CLI applications that respond to keyboard events and pasted text.
+
+## The useInput Hook
+
+The `useInput` hook is the primary way to handle keyboard input in Ink. It provides a convenient alternative to manually listening for stdin data events.
+
+### Basic Usage
+
+```tsx
+import {useInput, Text} from 'ink';
+
+const MyApp = () => {
+	useInput((input, key) => {
+		if (input === 'q') {
+			// User pressed 'q'
+		}
+
+		if (key.leftArrow) {
+			// User pressed left arrow
+		}
+	});
+
+	return <Text>Press any key</Text>;
+};
+```
+
+### Input Handler Parameters
+
+The handler receives two parameters:
+
+#### `input` (string)
+
+The actual character(s) the user typed:
+
+- Single characters: `'a'`, `'q'`, `'1'`
+- Special keys don't populate input: arrow keys, Enter, Escape, etc.
+- Pasted text: If the user pastes multiple characters, `input` contains the entire string
+
+#### `key` (object)
+
+Object with boolean properties indicating which special keys were pressed:
+
+- `key.leftArrow`, `key.rightArrow`, `key.upArrow`, `key.downArrow`
+- `key.return` (Enter key)
+- `key.escape`
+- `key.ctrl`
+- `key.shift`
+- `key.tab`
+- `key.backspace`
+- `key.delete`
+- `key.pageDown`, `key.pageUp`
+- `key.home`, `key.end`
+- `key.meta`
+
+## Complete Example: Robot Movement
+
+Here's a complete example from the Ink repository that demonstrates keyboard input handling:
+
+```tsx
+import React, {useState} from 'react';
+import {render, useInput, useApp, Box, Text} from 'ink';
+
+const Robot = () => {
+	const {exit} = useApp();
+	const [x, setX] = useState(1);
+	const [y, setY] = useState(1);
+
+	useInput((input, key) => {
+		if (input === 'q') {
+			exit();
+		}
+
+		if (key.leftArrow) {
+			setX(Math.max(1, x - 1));
+		}
+
+		if (key.rightArrow) {
+			setX(Math.min(20, x + 1));
+		}
+
+		if (key.upArrow) {
+			setY(Math.max(1, y - 1));
+		}
+
+		if (key.downArrow) {
+			setY(Math.min(10, y + 1));
+		}
+	});
+
+	return (
+		<Box flexDirection="column">
+			<Text>Use arrow keys to move the face. Press "q" to exit.</Text>
+			<Box height={12} paddingLeft={x} paddingTop={y}>
+				<Text>^_^</Text>
+			</Box>
+		</Box>
+	);
+};
+
+render(<Robot />);
+```
+
+## Handling Different Input Types
+
+### Character Input
+
+Handle regular character presses:
+
+```tsx
+useInput((input, key) => {
+	if (input === 'q') {
+		// Quit
+	}
+
+	if (input === 'r') {
+		// Refresh
+	}
+
+	if (input === ' ') {
+		// Space bar
+	}
+});
+```
+
+### Arrow Keys
+
+Handle directional input:
+
+```tsx
+const [position, setPosition] = useState({x: 0, y: 0});
+
+useInput((input, key) => {
+	if (key.upArrow) {
+		setPosition(prev => ({...prev, y: prev.y - 1}));
+	}
+
+	if (key.downArrow) {
+		setPosition(prev => ({...prev, y: prev.y + 1}));
+	}
+
+	if (key.leftArrow) {
+		setPosition(prev => ({...prev, x: prev.x - 1}));
+	}
+
+	if (key.rightArrow) {
+		setPosition(prev => ({...prev, x: prev.x + 1}));
+	}
+});
+```
+
+### Enter and Escape
+
+Handle confirmation and cancellation:
+
+```tsx
+const [inputValue, setInputValue] = useState('');
+
+useInput((input, key) => {
+	if (key.return) {
+		// Submit
+		handleSubmit(inputValue);
+	}
+
+	if (key.escape) {
+		// Cancel
+		handleCancel();
+	}
+});
+```
+
+### Keyboard Modifiers
+
+Detect Ctrl, Shift, and Meta keys:
+
+```tsx
+useInput((input, key) => {
+	if (key.ctrl && input === 'c') {
+		// Ctrl+C (already handled by default, but you can override)
+	}
+
+	if (key.ctrl && input === 's') {
+		// Ctrl+S - Save
+		save();
+	}
+
+	if (key.shift && key.tab) {
+		// Shift+Tab - Navigate backwards
+		navigateBack();
+	}
+});
+```
+
+## Controlling Input Handling
+
+### Conditional Input Handling
+
+Enable or disable input handling dynamically:
+
+```tsx
+const [isActive, setIsActive] = useState(true);
+
+useInput((input, key) => {
+	// Handle input
+}, {isActive});
+```
+
+This is useful when you have multiple components using `useInput` and only want one to be active:
+
+```tsx
+const App = () => {
+	const [activePanel, setActivePanel] = useState('main');
+
+	return (
+		<>
+			<MainPanel isActive={activePanel === 'main'} />
+			<SettingsPanel isActive={activePanel === 'settings'} />
+		</>
+	);
+};
+
+const MainPanel = ({isActive}) => {
+	useInput((input) => {
+		// Only receives input when isActive is true
+	}, {isActive});
+
+	return <Text>Main Panel</Text>;
+};
+```
+
+## The usePaste Hook
+
+The `usePaste` hook handles pasted text separately from typed input. When active, it enables bracketed paste mode, which treats pasted content as a single string.
+
+### Basic Usage
+
+```tsx
+import {usePaste, Text} from 'ink';
+
+const MyApp = () => {
+	usePaste((text) => {
+		// Receives the full pasted string
+		console.log('Pasted:', text);
+	});
+
+	return <Text>Paste some text</Text>;
+};
+```
+
+### Using usePaste with useInput
+
+Both hooks can be used together - they operate on separate channels:
+
+```tsx
+import {useInput, usePaste} from 'ink';
+
+const TextInput = () => {
+	const [value, setValue] = useState('');
+
+	useInput((input, key) => {
+		// Only receives typed characters, not pasted text
+		if (key.return) {
+			handleSubmit(value);
+		} else if (key.backspace) {
+			setValue(prev => prev.slice(0, -1));
+		} else {
+			setValue(prev => prev + input);
+		}
+	});
+
+	usePaste((text) => {
+		// Receives pasted text as a single string
+		setValue(prev => prev + text);
+	});
+
+	return <Text>Input: {value}</Text>;
+};
+```
+
+### Controlling Paste Handling
+
+```tsx
+const [isPasteActive, setIsPasteActive] = useState(true);
+
+usePaste((text) => {
+	// Handle paste
+}, {isActive: isPasteActive});
+```
+
+## Building Interactive Components
+
+### Menu Navigation
+
+```tsx
+import {useState} from 'react';
+import {Box, Text, useInput} from 'ink';
+
+const Menu = ({items, onSelect}) => {
+	const [selectedIndex, setSelectedIndex] = useState(0);
+
+	useInput((input, key) => {
+		if (key.upArrow) {
+			setSelectedIndex(prev => Math.max(0, prev - 1));
+		}
+
+		if (key.downArrow) {
+			setSelectedIndex(prev => Math.min(items.length - 1, prev + 1));
+		}
+
+		if (key.return) {
+			onSelect(items[selectedIndex]);
+		}
+	});
+
+	return (
+		<Box flexDirection="column">
+			{items.map((item, index) => (
+				<Text
+					key={index}
+					color={index === selectedIndex ? 'blue' : 'white'}
+				>
+					{index === selectedIndex ? '> ' : '  '}{item}
+				</Text>
+			))}
+		</Box>
+	);
+};
+```
+
+### Confirmation Dialog
+
+```tsx
+const ConfirmDialog = ({message, onConfirm, onCancel}) => {
+	useInput((input, key) => {
+		if (input === 'y' || input === 'Y') {
+			onConfirm();
+		}
+
+		if (input === 'n' || input === 'N' || key.escape) {
+			onCancel();
+		}
+	});
+
+	return (
+		<Box flexDirection="column">
+			<Text>{message}</Text>
+			<Text>
+				<Text color="green">[Y]es</Text>
+				{' / '}
+				<Text color="red">[N]o</Text>
+			</Text>
+		</Box>
+	);
+};
+```
+
+## Best Practices
+
+<Card title="Always Provide Exit Option" icon="door-open">
+When using `useInput`, always provide a way to exit (typically 'q' or Ctrl+C) so users don't get stuck.
+</Card>
+
+<Card title="Show Input Instructions" icon="keyboard">
+Display clear instructions about available keyboard shortcuts in your UI.
+</Card>
+
+<Card title="Use isActive for Focus Management" icon="focus">
+When multiple components use `useInput`, control which one receives input with the `isActive` option.
+</Card>
+
+<Card title="Combine useInput and usePaste" icon="paste">
+Use both hooks together to handle typed input and pasted text separately for better user experience.
+</Card>
+
+<Card title="Validate Input Early" icon="check">
+Validate user input as early as possible to provide immediate feedback.
+</Card>

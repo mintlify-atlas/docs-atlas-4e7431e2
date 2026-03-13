@@ -1,0 +1,289 @@
+---
+title: Newline
+description: Insert line breaks within Text components
+---
+
+The `<Newline>` component adds one or more newline (`\n`) characters. It must be used within `<Text>` components.
+
+## Basic Usage
+
+```tsx
+import {render, Text, Newline} from 'ink';
+
+const App = () => (
+  <Text>
+    <Text color="green">Hello</Text>
+    <Newline />
+    <Text color="red">World</Text>
+  </Text>
+);
+
+render(<App />);
+```
+
+Output:
+```
+Hello
+World
+```
+
+## Props
+
+<ParamField path="count" type="number" default="1">
+  Number of newlines to insert.
+  
+  ```tsx
+  <Text>
+    First line
+    <Newline count={2} />
+    Third line (with blank line above)
+  </Text>
+  ```
+</ParamField>
+
+## Examples
+
+### Single Newline
+
+```tsx
+import {Text, Newline} from 'ink';
+
+const App = () => (
+  <Text>
+    Line 1
+    <Newline />
+    Line 2
+  </Text>
+);
+```
+
+Output:
+```
+Line 1
+Line 2
+```
+
+### Multiple Newlines
+
+```tsx
+import {Text, Newline} from 'ink';
+
+const App = () => (
+  <Text>
+    Header
+    <Newline count={3} />
+    Content (with 2 blank lines above)
+  </Text>
+);
+```
+
+Output:
+```
+Header
+
+
+Content (with 2 blank lines above)
+```
+
+### Styled Multi-line Text
+
+```tsx
+import {Text, Newline} from 'ink';
+
+const App = () => (
+  <Text>
+    <Text bold color="blue">Title</Text>
+    <Newline />
+    <Text>Regular text</Text>
+    <Newline />
+    <Text italic dimColor>Footer</Text>
+  </Text>
+);
+```
+
+### Building a List
+
+```tsx
+import {Text, Newline} from 'ink';
+
+const List = ({items}) => (
+  <Text>
+    {items.map((item, index) => (
+      <>
+        <Text key={item}>• {item}</Text>
+        {index < items.length - 1 && <Newline />}
+      </>
+    ))}
+  </Text>
+);
+
+const App = () => (
+  <List items={['First item', 'Second item', 'Third item']} />
+);
+```
+
+Output:
+```
+• First item
+• Second item
+• Third item
+```
+
+### Spacing in Forms
+
+```tsx
+import {Box, Text, Newline} from 'ink';
+
+const Form = () => (
+  <Box flexDirection="column" padding={1}>
+    <Text>
+      <Text bold>User Registration</Text>
+      <Newline count={2} />
+      <Text>Name: </Text>
+      <Text color="green">John Doe</Text>
+      <Newline />
+      <Text>Email: </Text>
+      <Text color="green">john@example.com</Text>
+      <Newline count={2} />
+      <Text dimColor>Press Enter to submit</Text>
+    </Text>
+  </Box>
+);
+```
+
+## Alternative: String Newlines
+
+You can also use string literals with `\n`:
+
+```tsx
+// Using <Newline>
+<Text>
+  Hello
+  <Newline />
+  World
+</Text>
+
+// Using \n
+<Text>
+  Hello{"\n"}World
+</Text>
+
+// Both produce the same output
+```
+
+### When to Use Each
+
+**Use `<Newline>`:**
+- When working with React components and JSX
+- For dynamic line counts
+- When you want explicit, readable line breaks
+
+```tsx
+<Text>
+  Header
+  <Newline count={spacing} />
+  Content
+</Text>
+```
+
+**Use `\n` strings:**
+- For simple, static content
+- When embedding in template literals
+- For concise inline breaks
+
+```tsx
+<Text>Line 1{"\n"}Line 2{"\n"}Line 3</Text>
+```
+
+## Common Patterns
+
+### Paragraph Spacing
+
+```tsx
+const Article = () => (
+  <Text>
+    <Text bold>Introduction</Text>
+    <Newline count={2} />
+    <Text>
+      This is the first paragraph of the article.
+      It contains important information.
+    </Text>
+    <Newline count={2} />
+    <Text>
+      This is the second paragraph with more details.
+    </Text>
+  </Text>
+);
+```
+
+### Header and Footer
+
+```tsx
+const Page = ({title, children, footer}) => (
+  <Text>
+    <Text bold color="blue">{title}</Text>
+    <Newline count={2} />
+    {children}
+    <Newline count={2} />
+    <Text dimColor>{footer}</Text>
+  </Text>
+);
+```
+
+### Conditional Spacing
+
+```tsx
+const ConditionalNewline = ({show, count = 1}) => (
+  show ? <Newline count={count} /> : null
+);
+
+const App = ({showSpacing}) => (
+  <Text>
+    Header
+    <ConditionalNewline show={showSpacing} count={2} />
+    Content
+  </Text>
+);
+```
+
+## Important Notes
+
+<Warning>
+  `<Newline>` must be used inside `<Text>` components. It will not work inside `<Box>` or other components.
+</Warning>
+
+```tsx
+// ✅ Correct
+<Text>
+  Hello
+  <Newline />
+  World
+</Text>
+
+// ❌ Incorrect
+<Box>
+  <Newline />
+</Box>
+```
+
+<Note>
+  For vertical spacing between boxes, use margin or padding on `<Box>` components instead:
+</Note>
+
+```tsx
+// For spacing between boxes, use marginTop/marginBottom
+<Box flexDirection="column">
+  <Box>
+    <Text>First box</Text>
+  </Box>
+  <Box marginTop={2}>
+    <Text>Second box (2 lines below)</Text>
+  </Box>
+</Box>
+```
+
+## Related Components
+
+- [Text](/components/text) - Container for Newline components
+- [Box](/components/box) - Use margin for spacing between boxes
+- [Spacer](/components/spacer) - Flexible spacing in layouts

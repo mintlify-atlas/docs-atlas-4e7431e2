@@ -1,0 +1,575 @@
+---
+title: Kitty Keyboard Protocol
+description: Enable enhanced keyboard input with the Kitty keyboard protocol for better modifier key detection and key event types
+---
+
+The [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) provides enhanced keyboard input handling in terminals that support it. When enabled, Ink can detect additional modifiers, distinguish between similar keys, and track key press, repeat, and release events.
+
+## What is the Kitty Keyboard Protocol?
+
+Traditional terminal input has limitations:
+- Some key combinations produce identical byte sequences (e.g., `Ctrl+I` and `Tab` both send `\x09`)
+- Modifier keys like `Shift`, `Super`, and `Hyper` are not reliably detected
+- No distinction between key press, repeat, and release events
+
+The Kitty keyboard protocol solves these problems by using CSI u escape sequences that encode:
+- Exact key identity
+- All active modifiers
+- Event type (press/repeat/release)
+- Additional metadata
+
+## Supported Terminals
+
+The protocol is supported by:
+- [Kitty](https://sw.kovidgoyal.net/kitty/)
+- [WezTerm](https://wezfurlong.org/wezterm/)
+- [Ghostty](https://ghostty.org/)
+- [foot](https://codeberg.org/dnkl/foot)
+- And other modern terminal emulators
+
+## Enabling the Protocol
+
+Enable the Kitty keyboard protocol when calling `render()`:
+
+### Auto-Detection (Recommended)
+
+```jsx
+import {render} from 'ink';
+
+render(<MyApp />, {
+  kittyKeyboard: {
+    mode: 'auto'  // Default
+  }
+});
+```
+
+With `mode: 'auto'`, Ink:
+1. Checks if the terminal is a known supporter (kitty, WezTerm, Ghostty)
+2. Sends a protocol query (`CSI ? u`)
+3. Waits for a response with a short timeout
+4. Enables the protocol only if the terminal responds positively
+
+### Force Enable
+
+```jsx
+render(<MyApp />, {
+  kittyKeyboard: {
+    mode: 'enabled'
+  }
+});
+```
+
+<Warning>
+  Both stdin and stdout must be TTYs for forced mode to work. Non-TTY streams will ignore this option.
+</Warning>
+
+### Disable
+
+```jsx
+render(<MyApp />, {
+  kittyKeyboard: {
+    mode: 'disabled'
+  }
+});
+```
+
+## Protocol Flags
+
+The protocol supports several flags that control its behavior:
+
+```jsx
+render(<MyApp />, {
+  kittyKeyboard: {
+    mode: 'enabled',
+    flags: [
+      'disambiguateEscapeCodes',  // Default
+      'reportEventTypes',
+      'reportAlternateKeys',
+      'reportAllKeysAsEscapeCodes',
+      'reportAssociatedText'
+    ]
+  }
+});
+```
+
+### Available Flags
+
+<ResponseField name="disambiguateEscapeCodes" type="flag" default="enabled">
+  Disambiguate keys that normally produce the same escape sequence:
+  - `Ctrl+I` vs `Tab`
+  - `Shift+Enter` vs `Enter`
+  - `Escape` vs `Ctrl+[`
+  
+  **This flag is enabled by default.**
+</ResponseField>
+
+<ResponseField name="reportEventTypes" type="flag">
+  Report whether a key event is a press, repeat, or release via the `key.eventType` property.
+</ResponseField>
+
+<ResponseField name="reportAlternateKeys" type="flag">
+  Report alternate key encodings (useful for international keyboards).
+</ResponseField>
+
+<ResponseField name="reportAllKeysAsEscapeCodes" type="flag">
+  Force all keys to be reported as escape codes, even printable characters.
+</ResponseField>
+
+<ResponseField name="reportAssociatedText" type="flag">
+  Report associated text with key events (useful for IME input).
+</ResponseField>
+
+### Flag Implementation
+
+Internally, flags are converted to a bitmask:
+
+```typescript src/kitty-keyboard.ts
+export const kittyFlags = {
+  disambiguateEscapeCodes: 1,
+  reportEventTypes: 2,
+  reportAlternateKeys: 4,
+  reportAllKeysAsEscapeCodes: 8,
+  reportAssociatedText: 16,
+} as const;
+
+export function resolveFlags(flags: KittyFlagName[]): number {
+  let result = 0;
+  for (const flag of flags) {
+    result |= kittyFlags[flag];
+  }
+  return result;
+}
+```
+
+## Enhanced Key Detection
+
+With the protocol enabled, you can detect additional modifiers and key information:
+
+### Super Key (Cmd/Win)
+
+```jsx
+import {useInput} from 'ink';
+
+const App = () => {
+  useInput((input, key) => {
+    if (key.super) {
+      console.log('Super key pressed');
+      // Super+S for save, etc.
+    }
+  });
+  
+  return <Text>Press Cmd/Win key...</Text>;
+};
+```
+
+### Hyper Key
+
+```jsx
+useInput((input, key) => {
+  if (key.hyper) {
+    console.log('Hyper key pressed');
+  }
+});
+```
+
+### Caps Lock State
+
+```jsx
+import {useState} from 'react';
+import {Text, useInput} from 'ink';
+
+const App = () => {
+  const [capsLockOn, setCapsLockOn] = useState(false);
+  
+  useInput((input, key) => {
+    if (key.capsLock !== undefined) {
+      setCapsLockOn(key.capsLock);
+    }
+  });
+  
+  return (
+    <Text>
+      Caps Lock: {capsLockOn ? 'ON' : 'OFF'}
+    </Text>
+  );
+};
+```
+
+### Num Lock State
+
+```jsx
+useInput((input, key) => {
+  if (key.numLock) {
+    console.log('Num Lock is active');
+  }
+});
+```
+
+### Event Types
+
+With the `reportEventTypes` flag:
+
+```jsx
+import {useInput} from 'ink';
+
+const App = () => {
+  useInput((input, key) => {
+    switch (key.eventType) {
+      case 'press':
+        console.log('Key pressed');
+        break;
+      case 'repeat':
+        console.log('Key held down (repeating)');
+        break;
+      case 'release':
+        console.log('Key released');
+        break;
+    }
+  });
+  
+  return <Text>Press and hold any key...</Text>;
+};
+```
+
+## Key Properties Reference
+
+When the Kitty keyboard protocol is enabled, the `key` object in `useInput` includes:
+
+```typescript
+interface Key {
+  // Standard modifiers
+  ctrl?: boolean;
+  shift?: boolean;
+  meta?: boolean;
+  
+  // Enhanced modifiers (require kitty protocol)
+  super?: boolean;     // Cmd on macOS, Win on Windows
+  hyper?: boolean;
+  capsLock?: boolean;  // Caps Lock state
+  numLock?: boolean;   // Num Lock state
+  
+  // Event type (requires reportEventTypes flag)
+  eventType?: 'press' | 'repeat' | 'release';
+  
+  // Arrow keys
+  leftArrow?: boolean;
+  rightArrow?: boolean;
+  upArrow?: boolean;
+  downArrow?: boolean;
+  
+  // Special keys
+  return?: boolean;
+  escape?: boolean;
+  tab?: boolean;
+  backspace?: boolean;
+  delete?: boolean;
+  pageUp?: boolean;
+  pageDown?: boolean;
+  home?: boolean;
+  end?: boolean;
+}
+```
+
+## Behavior Changes
+
+When the Kitty keyboard protocol is enabled:
+
+### Non-Printable Keys
+
+Function keys, modifier keys, and media keys produce **empty input**:
+
+```jsx
+useInput((input, key) => {
+  console.log('input:', input);  // Empty string for F1-F35, Shift, etc.
+  console.log('key:', key);      // Key properties still populated
+});
+```
+
+### Ctrl+Letter Shortcuts
+
+Ctrl+letter combinations work as expected:
+
+```jsx
+useInput((input, key) => {
+  if (input === 'c' && key.ctrl) {
+    console.log('Ctrl+C pressed');
+    // exitOnCtrlC still works!
+  }
+});
+```
+
+Even though terminals may send codepoint 1-26 for Ctrl+A through Ctrl+Z, Ink normalizes these to the letter with `key.ctrl = true`.
+
+### Key Disambiguation
+
+Keys that were previously indistinguishable are now separate:
+
+```jsx
+useInput((input, key) => {
+  if (input === '\t' && !key.ctrl) {
+    console.log('Tab key');
+  } else if (input === 'i' && key.ctrl) {
+    console.log('Ctrl+I (different from Tab!)');
+  }
+});
+```
+
+## Practical Examples
+
+### Keyboard Shortcut Handler
+
+```jsx
+import {useInput, Text, Box} from 'ink';
+
+const ShortcutDemo = () => {
+  useInput((input, key) => {
+    // Cmd+S / Win+S for save
+    if (input === 's' && key.super) {
+      console.log('Save triggered');
+    }
+    
+    // Ctrl+Shift+P for command palette
+    if (input === 'p' && key.ctrl && key.shift) {
+      console.log('Command palette');
+    }
+    
+    // Hyper+Space for custom action
+    if (input === ' ' && key.hyper) {
+      console.log('Hyper action');
+    }
+  });
+  
+  return (
+    <Box flexDirection="column">
+      <Text>Try these shortcuts:</Text>
+      <Text>- Cmd/Win+S: Save</Text>
+      <Text>- Ctrl+Shift+P: Command palette</Text>
+      <Text>- Hyper+Space: Custom action</Text>
+    </Box>
+  );
+};
+```
+
+### Game Controls with Event Types
+
+```jsx
+import {useState} from 'react';
+import {useInput, Text, Box} from 'ink';
+
+const Game = () => {
+  const [position, setPosition] = useState({x: 0, y: 0});
+  const [isJumping, setIsJumping] = useState(false);
+  
+  useInput((input, key) => {
+    // Move only on initial press, not on repeat
+    if (key.eventType === 'press') {
+      if (key.leftArrow) setPosition(p => ({...p, x: p.x - 1}));
+      if (key.rightArrow) setPosition(p => ({...p, x: p.x + 1}));
+      if (input === ' ') setIsJumping(true);
+    }
+    
+    // Stop jumping on release
+    if (key.eventType === 'release' && input === ' ') {
+      setIsJumping(false);
+    }
+  });
+  
+  return (
+    <Box flexDirection="column">
+      <Text>Position: ({position.x}, {position.y})</Text>
+      <Text>Jumping: {isJumping ? 'Yes' : 'No'}</Text>
+    </Box>
+  );
+};
+
+render(<Game />, {
+  kittyKeyboard: {
+    mode: 'auto',
+    flags: ['disambiguateEscapeCodes', 'reportEventTypes']
+  }
+});
+```
+
+### Caps Lock Indicator
+
+```jsx
+import {useState} from 'react';
+import {useInput, Text} from 'ink';
+
+const PasswordInput = () => {
+  const [password, setPassword] = useState('');
+  const [capsLock, setCapsLock] = useState(false);
+  
+  useInput((input, key) => {
+    if (key.capsLock !== undefined) {
+      setCapsLock(key.capsLock);
+    }
+    
+    if (input && !key.return) {
+      setPassword(prev => prev + input);
+    }
+  });
+  
+  return (
+    <>
+      <Text>Password: {'*'.repeat(password.length)}</Text>
+      {capsLock && (
+        <Text color="yellow">⚠ Caps Lock is ON</Text>
+      )}
+    </>
+  );
+};
+```
+
+## Modifier Bitmasks
+
+Internally, the protocol uses bitmasks for modifiers:
+
+```typescript src/kitty-keyboard.ts
+export const kittyModifiers = {
+  shift: 1,
+  alt: 2,
+  ctrl: 4,
+  super: 8,
+  hyper: 16,
+  meta: 32,
+  capsLock: 64,
+  numLock: 128,
+} as const;
+```
+
+These are automatically decoded by Ink when processing input.
+
+## Fallback Behavior
+
+If the protocol is not supported:
+- `key.super`, `key.hyper`, `key.capsLock`, and `key.numLock` will be `undefined`
+- `key.eventType` will be `undefined`
+- Standard modifiers (`ctrl`, `shift`, `meta`) still work with traditional escape sequences
+- Your app continues to function with basic keyboard input
+
+## Detecting Protocol Support
+
+You can check if the protocol is active by testing for enhanced properties:
+
+```jsx
+import {useState} from 'react';
+import {useInput, Text} from 'ink';
+
+const ProtocolDetector = () => {
+  const [supported, setSupported] = useState(null);
+  
+  useInput((input, key) => {
+    // If eventType is defined, protocol is active
+    if (key.eventType !== undefined) {
+      setSupported(true);
+    }
+  });
+  
+  return (
+    <Text>
+      Protocol: {supported === null ? 'Unknown' : supported ? 'Enabled' : 'Disabled'}
+    </Text>
+  );
+};
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use auto-detection mode">
+    Let Ink detect protocol support automatically:
+    
+    ```jsx
+    render(<App />, {
+      kittyKeyboard: {mode: 'auto'}
+    });
+    ```
+    
+    This ensures compatibility across different terminals.
+  </Accordion>
+  
+  <Accordion title="Provide fallbacks for enhanced features">
+    Don't rely solely on enhanced modifiers:
+    
+    ```jsx
+    useInput((input, key) => {
+      // Primary: Super+S
+      if (input === 's' && key.super) {
+        save();
+      }
+      // Fallback: Ctrl+S
+      else if (input === 's' && key.ctrl) {
+        save();
+      }
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Only request flags you need">
+    Don't enable all flags unnecessarily:
+    
+    ```jsx
+    // Good - only what you need
+    flags: ['disambiguateEscapeCodes', 'reportEventTypes']
+    
+    // Bad - unnecessary flags
+    flags: ['disambiguateEscapeCodes', 'reportEventTypes', 'reportAlternateKeys', 'reportAllKeysAsEscapeCodes', 'reportAssociatedText']
+    ```
+  </Accordion>
+  
+  <Accordion title="Test in multiple terminals">
+    Not all terminals support the protocol. Test in:
+    - Kitty
+    - WezTerm
+    - Standard terminals (iTerm2, Terminal.app, etc.)
+    - Windows Terminal
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Protocol not activating
+
+**Symptoms:** Enhanced properties are always `undefined`
+
+**Solutions:**
+1. Verify your terminal supports the protocol
+2. Check that both stdin and stdout are TTYs
+3. Try `mode: 'enabled'` to force activation
+4. Increase timeout if auto-detection is too fast
+
+### Duplicate key events
+
+**Symptoms:** Keys trigger multiple times
+
+**Solution:** Use `key.eventType` to filter:
+
+```jsx
+useInput((input, key) => {
+  if (key.eventType === 'press') {
+    // Only handle initial press
+  }
+});
+```
+
+### Non-printable keys not working
+
+**Symptoms:** Function keys don't trigger handlers
+
+**Solution:** Check `key` properties, not `input`:
+
+```jsx
+useInput((input, key) => {
+  // input is empty for F1, but key properties are set
+  if (key.f1) {
+    console.log('F1 pressed');
+  }
+});
+```
+
+## See Also
+
+- [useInput Hook](/hooks/use-input) - Keyboard input handling
+- [Kitty Keyboard Protocol Spec](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) - Full protocol specification
+- [Input Handling Guide](/concepts/user-input) - General input patterns

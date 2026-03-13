@@ -1,0 +1,209 @@
+---
+title: Text
+description: Display and style text in your CLI application
+---
+
+The `<Text>` component displays text and provides styling options like color, bold, italic, underline, and more.
+
+## Basic Usage
+
+```tsx
+import {render, Text} from 'ink';
+
+const App = () => (
+  <Text color="green">Hello World</Text>
+);
+
+render(<App />);
+```
+
+## Props
+
+<ParamField path="color" type="string">
+  Change text color. Supports color names, hex codes, and RGB values. Ink uses [chalk](https://github.com/chalk/chalk) under the hood.
+  
+  ```tsx
+  <Text color="green">Green text</Text>
+  <Text color="#005cc5">Blue text</Text>
+  <Text color="rgb(232, 131, 136)">Red text</Text>
+  ```
+</ParamField>
+
+<ParamField path="backgroundColor" type="string">
+  Background color for the text. Accepts the same values as `color`.
+  
+  ```tsx
+  <Text backgroundColor="green" color="white">White on green</Text>
+  <Text backgroundColor="#005cc5" color="white">White on blue</Text>
+  ```
+</ParamField>
+
+<ParamField path="dimColor" type="boolean" default="false">
+  Dim the color to make it less bright.
+  
+  ```tsx
+  <Text color="red" dimColor>Dimmed red text</Text>
+  ```
+</ParamField>
+
+<ParamField path="bold" type="boolean" default="false">
+  Make the text bold.
+  
+  ```tsx
+  <Text bold>Bold text</Text>
+  ```
+</ParamField>
+
+<ParamField path="italic" type="boolean" default="false">
+  Make the text italic.
+  
+  ```tsx
+  <Text italic>Italic text</Text>
+  ```
+</ParamField>
+
+<ParamField path="underline" type="boolean" default="false">
+  Underline the text.
+  
+  ```tsx
+  <Text underline>Underlined text</Text>
+  ```
+</ParamField>
+
+<ParamField path="strikethrough" type="boolean" default="false">
+  Add a strikethrough line through the text.
+  
+  ```tsx
+  <Text strikethrough>Strikethrough text</Text>
+  ```
+</ParamField>
+
+<ParamField path="inverse" type="boolean" default="false">
+  Invert background and foreground colors.
+  
+  ```tsx
+  <Text inverse color="yellow">Inversed yellow</Text>
+  ```
+</ParamField>
+
+<ParamField path="wrap" type="'wrap' | 'truncate' | 'truncate-start' | 'truncate-middle' | 'truncate-end'" default="'wrap'">
+  Control how text behaves when it exceeds container width.
+  
+  - `wrap` - Split text into multiple lines
+  - `truncate` / `truncate-end` - Cut off end with ellipsis
+  - `truncate-start` - Cut off start with ellipsis
+  - `truncate-middle` - Cut off middle with ellipsis
+  
+  ```tsx
+  <Box width={7}>
+    <Text>Hello World</Text>
+  </Box>
+  // Output: Hello
+  //         World
+  
+  <Box width={7}>
+    <Text wrap="truncate">Hello World</Text>
+  </Box>
+  // Output: Hello…
+  
+  <Box width={7}>
+    <Text wrap="truncate-middle">Hello World</Text>
+  </Box>
+  // Output: He…ld
+  ```
+</ParamField>
+
+<ParamField path="aria-label" type="string">
+  Label for screen readers. When set, this replaces the visible text for screen reader users.
+</ParamField>
+
+<ParamField path="aria-hidden" type="boolean">
+  Hide the element from screen readers.
+</ParamField>
+
+## Examples
+
+### Combining Styles
+
+You can combine multiple styling props:
+
+```tsx
+import {render, Text} from 'ink';
+
+const App = () => (
+  <>
+    <Text color="green" bold underline>
+      Important message
+    </Text>
+    <Text color="black" backgroundColor="white" italic>
+      Black on white italic
+    </Text>
+  </>
+);
+
+render(<App />);
+```
+
+### Counter Example
+
+From the Ink repository:
+
+```tsx
+import React, {useState, useEffect} from 'react';
+import {render, Text} from 'ink';
+
+const Counter = () => {
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCounter(previousCounter => previousCounter + 1);
+    }, 100);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  return <Text color="green">{counter} tests passed</Text>;
+};
+
+render(<Counter />);
+```
+
+### Text Wrapping
+
+```tsx
+import {Box, Text} from 'ink';
+
+const App = () => (
+  <Box flexDirection="column" width={20}>
+    <Text>This is a long text that will wrap automatically</Text>
+    <Text wrap="truncate">This will be truncated with ellipsis</Text>
+  </Box>
+);
+```
+
+## Important Notes
+
+<Warning>
+  `<Text>` can only contain text nodes and nested `<Text>` components. You cannot use `<Box>` or other components inside `<Text>`.
+</Warning>
+
+```tsx
+// ✅ Correct
+<Text>
+  Hello <Text color="green">World</Text>
+</Text>
+
+// ❌ Incorrect
+<Text>
+  <Box>Hello</Box>
+</Text>
+```
+
+## Related Components
+
+- [Box](/components/box) - Layout container for organizing text
+- [Transform](/components/transform) - Apply custom transformations to text
+- [Newline](/components/newline) - Insert line breaks in text

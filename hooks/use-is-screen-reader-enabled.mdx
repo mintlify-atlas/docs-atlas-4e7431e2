@@ -1,0 +1,258 @@
+---
+title: 'useIsScreenReaderEnabled'
+description: 'React hook for detecting screen reader support in Ink'
+---
+
+`useIsScreenReaderEnabled` is a React hook that returns whether a screen reader is enabled. This is useful when you want to render different output for screen readers.
+
+## Usage
+
+```tsx
+import {useIsScreenReaderEnabled, Text} from 'ink';
+
+const Example = () => {
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+
+  return (
+    <Text>
+      {isScreenReaderEnabled
+        ? 'Screen reader is enabled'
+        : 'Screen reader is disabled'}
+    </Text>
+  );
+};
+```
+
+## Return Value
+
+Returns a `boolean` indicating whether screen reader support is enabled.
+
+## Examples
+
+### Conditional Content Rendering
+
+```tsx
+import {useIsScreenReaderEnabled, Text, Box} from 'ink';
+
+const Example = () => {
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+
+  return (
+    <Text>
+      {isScreenReaderEnabled
+        ? 'Screen reader is enabled'
+        : 'Screen reader is disabled'}
+    </Text>
+  );
+};
+```
+
+### Accessible UI Components
+
+```tsx
+import {useState} from 'react';
+import {Box, Text, useInput, useIsScreenReaderEnabled} from 'ink';
+
+const CheckboxExample = () => {
+  const [checked, setChecked] = useState(false);
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+
+  useInput(input => {
+    if (input === ' ') {
+      setChecked(!checked);
+    }
+  });
+
+  // Provide more descriptive output for screen readers
+  const visualOutput = checked ? '[x]' : '[ ]';
+  const screenReaderOutput = checked
+    ? 'Checkbox: checked'
+    : 'Checkbox: unchecked';
+
+  return (
+    <Box>
+      <Text>
+        {isScreenReaderEnabled ? screenReaderOutput : visualOutput}
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Progress Bar with Screen Reader Support
+
+```tsx
+import {Box, Text, useIsScreenReaderEnabled} from 'ink';
+
+const ProgressBar = ({progress}) => {
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+  const barWidth = 20;
+  const filledWidth = Math.round((progress / 100) * barWidth);
+
+  if (isScreenReaderEnabled) {
+    // Provide text-based progress for screen readers
+    return <Text>Progress: {progress}% complete</Text>;
+  }
+
+  // Visual progress bar
+  return (
+    <Box>
+      <Text>
+        [{"█".repeat(filledWidth)}{"░".repeat(barWidth - filledWidth)}] {progress}%
+      </Text>
+    </Box>
+  );
+};
+```
+
+### Hide Decorative Elements
+
+```tsx
+import {Box, Text, useIsScreenReaderEnabled} from 'ink';
+
+const DecorativeLayout = () => {
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+
+  return (
+    <Box flexDirection="column">
+      {!isScreenReaderEnabled && (
+        <Text color="cyan">{'═'.repeat(40)}</Text>
+      )}
+      <Text>Important content here</Text>
+      {!isScreenReaderEnabled && (
+        <Text color="cyan">{'═'.repeat(40)}</Text>
+      )}
+    </Box>
+  );
+};
+```
+
+### Spinner with Screen Reader Alternative
+
+```tsx
+import {useEffect, useState} from 'react';
+import {Text, useIsScreenReaderEnabled} from 'ink';
+
+const Spinner = ({label}) => {
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
+  const [frame, setFrame] = useState(0);
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+  useEffect(() => {
+    if (isScreenReaderEnabled) {
+      return; // Don't animate for screen readers
+    }
+
+    const timer = setInterval(() => {
+      setFrame(prev => (prev + 1) % frames.length);
+    }, 80);
+
+    return () => clearInterval(timer);
+  }, [isScreenReaderEnabled]);
+
+  if (isScreenReaderEnabled) {
+    return <Text>Loading: {label}</Text>;
+  }
+
+  return <Text color="cyan">{frames[frame]} {label}</Text>;
+};
+```
+
+### ARIA Roles Example
+
+```tsx
+import React, {useState} from 'react';
+import {render, Text, Box, useInput} from 'ink';
+
+function AriaExample() {
+  const [checked, setChecked] = useState(false);
+
+  useInput(key => {
+    if (key === ' ') {
+      setChecked(!checked);
+    }
+  });
+
+  return (
+    <Box flexDirection="column">
+      <Text>
+        Press spacebar to toggle the checkbox. This example is best experienced
+        with a screen reader.
+      </Text>
+      <Box marginTop={1}>
+        <Box aria-role="checkbox" aria-state={{checked}}>
+          <Text>{checked ? '[x]' : '[ ]'}</Text>
+        </Box>
+      </Box>
+      <Box marginTop={1}>
+        <Text aria-hidden="true">This text is hidden from screen readers.</Text>
+      </Box>
+    </Box>
+  );
+}
+
+render(<AriaExample />);
+```
+
+## Enabling Screen Reader Support
+
+Screen reader support can be enabled in two ways:
+
+### Environment Variable
+
+Set the `INK_SCREEN_READER` environment variable to `true`:
+
+```bash
+INK_SCREEN_READER=true node your-cli.js
+```
+
+### Render Option
+
+Pass the `isScreenReaderEnabled` option when calling `render()`:
+
+```tsx
+import {render} from 'ink';
+
+render(<App />, {
+  isScreenReaderEnabled: true
+});
+```
+
+## Best Practices
+
+<Tip>
+  When building accessible CLI applications:
+  - Provide descriptive text alternatives for visual elements
+  - Hide decorative elements that don't convey meaning
+  - Use ARIA attributes (`aria-role`, `aria-state`, `aria-hidden`) to enhance screen reader support
+  - Avoid animations and rapidly changing content for screen readers
+  - Test with actual screen readers when possible
+</Tip>
+
+<Note>
+  By default, screen reader support is disabled unless explicitly enabled via the environment variable or render option.
+</Note>
+
+## ARIA Support
+
+Ink provides ARIA attribute support for enhanced screen reader compatibility:
+
+- `aria-role` - Define the semantic role of an element (e.g., "checkbox", "button", "list")
+- `aria-state` - Provide state information (e.g., `{checked: true}`)
+- `aria-hidden` - Hide decorative or redundant content from screen readers
+- `aria-label` - Provide accessible labels for elements
+
+See the [Screen Reader Support documentation](/advanced/screen-reader-support) for more details.
+
+## Use Cases
+
+- Building accessible CLI applications
+- Providing alternative text for visual elements
+- Hiding decorative UI elements from screen readers
+- Offering simplified output for screen reader users
+- Creating inclusive command-line tools
+
+## Related Topics
+
+- [Screen Reader Support](/advanced/screen-reader-support) - Learn about ARIA attributes and accessibility features
+- [Testing](/concepts/testing) - Test your accessible CLI applications
